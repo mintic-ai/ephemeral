@@ -1,6 +1,6 @@
 ---
 title: "Development Environment Setup"
-description: "Step-by-step guide to set up the Docker On-Demand development environment"
+description: "Step-by-step guide to set up the Ephemeral development environment"
 audience: ["developers"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,7 +12,7 @@ related_docs:
 
 # Development Environment Setup
 
-This guide will help you set up a complete development environment for the Docker On-Demand system.
+This guide will help you set up a complete development environment for the Ephemeral system.
 
 ## Prerequisites
 

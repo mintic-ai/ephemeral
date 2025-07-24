@@ -1,6 +1,6 @@
 ---
 title: "API Extension Guide"
-description: "Comprehensive guide for extending the Docker On-Demand API with new endpoints, middleware, and functionality"
+description: "Comprehensive guide for extending the Ephemeral API with new endpoints, middleware, and functionality"
 audience: ["developers", "api-developers"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,11 +12,11 @@ related_docs:
 
 # API Extension Guide
 
-This guide provides comprehensive instructions for extending the Docker On-Demand API with new endpoints, middleware, validation patterns, and error handling. It covers best practices for maintaining consistency and reliability across the API surface.
+This guide provides comprehensive instructions for extending the Ephemeral API with new endpoints, middleware, validation patterns, and error handling. It covers best practices for maintaining consistency and reliability across the API surface.
 
 ## API Architecture Overview
 
-The Docker On-Demand API is built using Express.js with a structured approach to:
+The Ephemeral API is built using Express.js with a structured approach to:
 
 - **Route Organization**: Logical grouping of related endpoints
 - **Middleware Pipeline**: Request processing, validation, and error handling
@@ -949,4 +949,4 @@ describe('MyResource API Integration', () => {
 3. **Error Codes**: Document all error codes and their meanings
 4. **Examples**: Provide request/response examples
 
-This guide provides a comprehensive foundation for extending the Docker On-Demand API while maintaining consistency, reliability, and best practices across all endpoints.
+This guide provides a comprehensive foundation for extending the Ephemeral API while maintaining consistency, reliability, and best practices across all endpoints.

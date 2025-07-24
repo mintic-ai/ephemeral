@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Docker build script for Docker On-Demand
+# Docker build script for Ephemeral
 # Usage: ./scripts/build-docker.sh [OPTIONS]
 
 set -e
@@ -43,7 +43,7 @@ show_usage() {
     cat << EOF
 Usage: $0 [OPTIONS]
 
-Build Docker image for Docker On-Demand application
+Build Docker image for Ephemeral application
 
 OPTIONS:
     -n, --name NAME         Image name (default: ephemeral)

@@ -1,6 +1,6 @@
 ---
 title: "Configuration Management Guide"
-description: "Comprehensive guide for managing configuration in the Docker On-Demand system, including environment variables, validation, and configuration patterns"
+description: "Comprehensive guide for managing configuration in the Ephemeral system, including environment variables, validation, and configuration patterns"
 audience: ["developers", "devops", "administrators"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,11 +12,11 @@ related_docs:
 
 # Configuration Management Guide
 
-This guide provides comprehensive instructions for managing configuration in the Docker On-Demand system, including environment variables, validation patterns, configuration extension, and best practices for different deployment environments.
+This guide provides comprehensive instructions for managing configuration in the Ephemeral system, including environment variables, validation patterns, configuration extension, and best practices for different deployment environments.
 
 ## Configuration Architecture Overview
 
-The Docker On-Demand system uses a centralized configuration management approach with the following characteristics:
+The Ephemeral system uses a centralized configuration management approach with the following characteristics:
 
 - **Environment-Based**: Configuration is primarily driven by environment variables
 - **Hierarchical**: Configuration is organized into logical sections (docker, cleanup, api)
@@ -659,4 +659,4 @@ export class ConfigValidator {
 }
 ```
 
-This guide provides a comprehensive foundation for managing configuration in the Docker On-Demand system, ensuring consistency, validation, and maintainability across all deployment environments.
+This guide provides a comprehensive foundation for managing configuration in the Ephemeral system, ensuring consistency, validation, and maintainability across all deployment environments.

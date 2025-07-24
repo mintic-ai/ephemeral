@@ -15,7 +15,7 @@ informed: ["Operations Team"]
 
 ## Context
 
-The Docker On-Demand system requires deep integration with Docker Engine to manage container lifecycles, monitor container activity, and perform cleanup operations. The choice of Docker integration approach significantly impacts system reliability, performance, and operational complexity.
+The Ephemeral system requires deep integration with Docker Engine to manage container lifecycles, monitor container activity, and perform cleanup operations. The choice of Docker integration approach significantly impacts system reliability, performance, and operational complexity.
 
 ### Key Requirements
 

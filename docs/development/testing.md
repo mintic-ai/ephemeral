@@ -1,6 +1,6 @@
 ---
 title: "Testing Documentation"
-description: "Testing guidelines, practices, and patterns for the Docker On-Demand project"
+description: "Testing guidelines, practices, and patterns for the Ephemeral project"
 audience: ["developers", "contributors"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,7 +12,7 @@ related_docs:
 
 # Testing Documentation
 
-This document provides comprehensive guidelines for testing in the Docker On-Demand project. We use Vitest as our testing framework with a focus on both unit and integration testing.
+This document provides comprehensive guidelines for testing in the Ephemeral project. We use Vitest as our testing framework with a focus on both unit and integration testing.
 
 ## Testing Philosophy
 
@@ -870,4 +870,4 @@ expect(mockFunction).toHaveBeenCalledWith(expectedArgs);
 console.log(mockFunction.mock.calls);
 ```
 
-This comprehensive testing documentation should help developers write effective tests and maintain high code quality in the Docker On-Demand project.
+This comprehensive testing documentation should help developers write effective tests and maintain high code quality in the Ephemeral project.

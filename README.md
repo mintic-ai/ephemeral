@@ -1,4 +1,4 @@
-# Docker On-Demand
+# Ephemeral
 
 A Docker container orchestration system with automatic lifecycle management. This system provides on-demand container creation, activity monitoring, and automatic cleanup of inactive containers through a REST API.
 
@@ -15,7 +15,7 @@ A Docker container orchestration system with automatic lifecycle management. Thi
 
 ## Use Cases
 
-Docker On-Demand is designed for scenarios where you need dynamic, temporary container environments with automatic lifecycle management. Here are some practical applications:
+Ephemeral is designed for scenarios where you need dynamic, temporary container environments with automatic lifecycle management. Here are some practical applications:
 
 ### 🧪 **Development and Testing**
 

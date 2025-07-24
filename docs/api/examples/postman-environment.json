@@ -1,13 +1,13 @@
 {
 	"id": "ephemeral-env",
-	"name": "Docker On-Demand Environment",
+	"name": "Ephemeral Environment",
 	"values": [
 		{
 			"key": "baseUrl",
 			"value": "http://localhost:3000",
 			"type": "default",
 			"enabled": true,
-			"description": "Base URL for the Docker On-Demand API"
+			"description": "Base URL for the Ephemeral API"
 		},
 		{
 			"key": "apiHost",

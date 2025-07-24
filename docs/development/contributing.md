@@ -1,6 +1,6 @@
 ---
 title: "Contributing Guidelines"
-description: "Guidelines for contributing to the Docker On-Demand project"
+description: "Guidelines for contributing to the Ephemeral project"
 audience: ["developers", "contributors"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,7 +12,7 @@ related_docs:
 
 # Contributing Guidelines
 
-Thank you for your interest in contributing to Docker On-Demand! This document provides guidelines and processes for contributing to the project.
+Thank you for your interest in contributing to Ephemeral! This document provides guidelines and processes for contributing to the project.
 
 ## Code of Conduct
 
@@ -379,4 +379,4 @@ If you have questions about contributing:
 3. Create a new issue with the "question" label
 4. Be specific about what you need help with
 
-Thank you for contributing to Docker On-Demand!
+Thank you for contributing to Ephemeral!

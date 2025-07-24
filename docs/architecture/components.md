@@ -12,7 +12,7 @@ related_docs:
 
 # System Components
 
-This document provides detailed information about each component in the Docker On-Demand system, including their responsibilities, interfaces, dependencies, and implementation details.
+This document provides detailed information about each component in the Ephemeral system, including their responsibilities, interfaces, dependencies, and implementation details.
 
 ## Component Overview
 
@@ -66,7 +66,7 @@ graph TB
 **Location**: `src/api/server.ts`
 
 #### Purpose
-Provides the REST API interface for external clients to interact with the Docker On-Demand system.
+Provides the REST API interface for external clients to interact with the Ephemeral system.
 
 #### Responsibilities
 - HTTP request/response handling

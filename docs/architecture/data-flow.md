@@ -1,6 +1,6 @@
 ---
 title: "Data Flow Documentation"
-description: "Detailed documentation of request/response flows and data movement through the Docker On-Demand system"
+description: "Detailed documentation of request/response flows and data movement through the Ephemeral system"
 audience: ["developers", "architects"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,11 +12,11 @@ related_docs:
 
 # Data Flow Documentation
 
-This document provides detailed sequence diagrams and data flow documentation for key operations in the Docker On-Demand system, including request/response flows, container lifecycle management, and cleanup processes.
+This document provides detailed sequence diagrams and data flow documentation for key operations in the Ephemeral system, including request/response flows, container lifecycle management, and cleanup processes.
 
 ## Overview
 
-The Docker On-Demand system processes requests through multiple layers, with data flowing between the API layer, service layer, and external systems. Understanding these flows is crucial for debugging, extending functionality, and maintaining system reliability.
+The Ephemeral system processes requests through multiple layers, with data flowing between the API layer, service layer, and external systems. Understanding these flows is crucial for debugging, extending functionality, and maintaining system reliability.
 
 ## Core Data Flow Patterns
 

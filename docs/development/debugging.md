@@ -1,6 +1,6 @@
 ---
 title: "Debugging and Troubleshooting Guide"
-description: "Comprehensive guide for debugging and troubleshooting the Docker On-Demand system"
+description: "Comprehensive guide for debugging and troubleshooting the Ephemeral system"
 audience: ["developers", "contributors"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,7 +12,7 @@ related_docs:
 
 # Debugging and Troubleshooting Guide
 
-This guide provides comprehensive debugging techniques and solutions for common issues in the Docker On-Demand system.
+This guide provides comprehensive debugging techniques and solutions for common issues in the Ephemeral system.
 
 ## Development Environment Debugging
 
@@ -888,4 +888,4 @@ cat application.log | jq 'select(.level == "error")'
 - [ ] Verify network connectivity
 - [ ] Check disk space
 
-This debugging guide should help developers quickly identify and resolve issues in the Docker On-Demand system. Remember to always start with the logs and work systematically through potential causes.
+This debugging guide should help developers quickly identify and resolve issues in the Ephemeral system. Remember to always start with the logs and work systematically through potential causes.

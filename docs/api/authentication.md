@@ -12,11 +12,11 @@ related_docs:
 
 # Authentication and Security
 
-This document covers the current authentication status, security considerations, and best practices for using the Docker On-Demand API.
+This document covers the current authentication status, security considerations, and best practices for using the Ephemeral API.
 
 ## Current Authentication Status
 
-**⚠️ Important Security Notice**: The Docker On-Demand API currently operates **without authentication**. All endpoints are publicly accessible to any client that can reach the API server.
+**⚠️ Important Security Notice**: The Ephemeral API currently operates **without authentication**. All endpoints are publicly accessible to any client that can reach the API server.
 
 ### Authentication Configuration
 

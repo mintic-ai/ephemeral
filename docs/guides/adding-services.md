@@ -1,6 +1,6 @@
 ---
 title: "Service Development Guide"
-description: "Comprehensive guide for creating and integrating new services in the Docker On-Demand system"
+description: "Comprehensive guide for creating and integrating new services in the Ephemeral system"
 audience: ["developers", "contributors"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,11 +12,11 @@ related_docs:
 
 # Service Development Guide
 
-This guide provides comprehensive instructions for creating new services in the Docker On-Demand system, including architecture patterns, dependency injection, testing strategies, and integration examples.
+This guide provides comprehensive instructions for creating new services in the Ephemeral system, including architecture patterns, dependency injection, testing strategies, and integration examples.
 
 ## Service Architecture Overview
 
-The Docker On-Demand system follows a service-oriented architecture where each service has specific responsibilities and well-defined interfaces. Services are designed to be:
+The Ephemeral system follows a service-oriented architecture where each service has specific responsibilities and well-defined interfaces. Services are designed to be:
 
 - **Single Responsibility**: Each service handles one specific domain
 - **Loosely Coupled**: Services depend on interfaces, not concrete implementations
@@ -834,4 +834,4 @@ export class MyScheduledService {
 3. **Metrics Collection**: Add metrics for monitoring service performance
 4. **Error Tracking**: Use structured error tracking
 
-This guide provides a comprehensive foundation for creating robust, testable, and maintainable services in the Docker On-Demand system. Follow these patterns and practices to ensure consistency and quality across all services.
+This guide provides a comprehensive foundation for creating robust, testable, and maintainable services in the Ephemeral system. Follow these patterns and practices to ensure consistency and quality across all services.

@@ -98,7 +98,7 @@ class DockerOnDemandApp {
       await this.apiServer.start();
       this.logger.info('DockerOnDemandApp', 'API server started');
 
-      this.logger.info('DockerOnDemandApp', 'Docker On-Demand system is now running');
+      this.logger.info('DockerOnDemandApp', 'Ephemeral system is now running');
 
     } catch (error) {
       const appError = error instanceof Error ? error : new Error(String(error));
@@ -235,7 +235,7 @@ async function main(): Promise<void> {
 
   } catch (error) {
     const mainError = error instanceof Error ? error : new Error(String(error));
-    console.error('Failed to start Docker On-Demand system:', mainError.message);
+    console.error('Failed to start Ephemeral system:', mainError.message);
     process.exit(1);
   }
 }

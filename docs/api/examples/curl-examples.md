@@ -16,7 +16,7 @@ This document provides comprehensive cURL examples for all API endpoints. These 
 
 ## Prerequisites
 
-- Docker On-Demand system running on `http://localhost:3000`
+- Ephemeral system running on `http://localhost:3000`
 - cURL installed on your system
 - Basic understanding of HTTP methods and JSON
 
@@ -400,7 +400,7 @@ curl -X GET "${BASE_URL}/invalid-endpoint"
 
 BASE_URL="http://localhost:3000"
 
-echo "=== Docker On-Demand API Workflow ==="
+echo "=== Ephemeral API Workflow ==="
 
 # 1. Check system health
 echo "1. Checking system health..."

@@ -12,7 +12,7 @@ related_docs:
 
 # Error Handling Reference
 
-This document provides comprehensive information about error handling in the Docker On-Demand API, including error codes, response formats, common scenarios, and troubleshooting strategies.
+This document provides comprehensive information about error handling in the Ephemeral API, including error codes, response formats, common scenarios, and troubleshooting strategies.
 
 ## Error Response Format
 

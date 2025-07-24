@@ -1,6 +1,6 @@
 ---
 title: "Coding Standards"
-description: "Code style guidelines and best practices for the Docker On-Demand project"
+description: "Code style guidelines and best practices for the Ephemeral project"
 audience: ["developers", "contributors"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,7 +12,7 @@ related_docs:
 
 # Coding Standards
 
-This document outlines the coding standards and best practices for the Docker On-Demand project. Following these standards ensures code consistency, maintainability, and readability across the codebase.
+This document outlines the coding standards and best practices for the Ephemeral project. Following these standards ensures code consistency, maintainability, and readability across the codebase.
 
 ## General Principles
 

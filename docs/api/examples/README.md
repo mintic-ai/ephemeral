@@ -1,6 +1,6 @@
 ---
 title: "API Examples and Testing"
-description: "Postman collection and examples for testing the Docker On-Demand API"
+description: "Postman collection and examples for testing the Ephemeral API"
 audience: ["developers", "testers", "api-users"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,7 +12,7 @@ related_docs:
 
 # API Examples and Testing
 
-This directory contains comprehensive examples and testing tools for the Docker On-Demand API, including Postman collections, cURL examples, and JavaScript client examples.
+This directory contains comprehensive examples and testing tools for the Ephemeral API, including Postman collections, cURL examples, and JavaScript client examples.
 
 ## Files Overview
 
@@ -36,7 +36,7 @@ The Postman collection includes:
 ### Collection Structure
 
 ```
-Docker On-Demand API/
+Ephemeral API/
 ├── Health Check/
 │   └── Get System Health
 ├── Container Management/
@@ -74,7 +74,7 @@ https://raw.githubusercontent.com/your-repo/ephemeral/main/docs/api/examples/pos
 2. Click "Import"
 3. Select `postman-environment.json`
 4. Click "Import"
-5. Select "Docker On-Demand Environment" from the environment dropdown
+5. Select "Ephemeral Environment" from the environment dropdown
 
 #### 3. Configure Environment
 
@@ -218,7 +218,7 @@ Error: connect ECONNREFUSED 127.0.0.1:3000
 ```
 
 **Solutions**:
-- Verify the Docker On-Demand service is running
+- Verify the Ephemeral service is running
 - Check the `baseUrl` environment variable
 - Ensure no firewall is blocking the connection
 
@@ -296,4 +296,4 @@ For issues with the Postman collection:
 
 ---
 
-*This collection provides comprehensive testing capabilities for the Docker On-Demand API, enabling efficient development, testing, and integration workflows.*
+*This collection provides comprehensive testing capabilities for the Ephemeral API, enabling efficient development, testing, and integration workflows.*

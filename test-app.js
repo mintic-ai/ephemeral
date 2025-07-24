@@ -2,7 +2,7 @@
 const { DockerOnDemandApp } = require('./dist/index.js');
 
 async function testApp() {
-  console.log('Testing Docker On-Demand App orchestration...');
+  console.log('Testing Ephemeral App orchestration...');
   
   try {
     const app = new DockerOnDemandApp();

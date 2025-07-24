@@ -1,6 +1,6 @@
 ---
 title: "Monitoring and Logging Guide"
-description: "Comprehensive guide for implementing monitoring, logging, and observability in the Docker On-Demand system"
+description: "Comprehensive guide for implementing monitoring, logging, and observability in the Ephemeral system"
 audience: ["developers", "devops", "administrators"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -12,11 +12,11 @@ related_docs:
 
 # Monitoring and Logging Guide
 
-This guide provides comprehensive instructions for implementing monitoring, logging, and observability in the Docker On-Demand system. It covers logging patterns, structured logging, monitoring setup, alerting configuration, and best practices for production environments.
+This guide provides comprehensive instructions for implementing monitoring, logging, and observability in the Ephemeral system. It covers logging patterns, structured logging, monitoring setup, alerting configuration, and best practices for production environments.
 
 ## Logging Architecture Overview
 
-The Docker On-Demand system uses a centralized logging architecture with the following characteristics:
+The Ephemeral system uses a centralized logging architecture with the following characteristics:
 
 - **Structured Logging**: All logs use consistent structured formats with metadata
 - **Component-Based**: Logs are organized by system components
@@ -1174,4 +1174,4 @@ this.app.get('/metrics', PrometheusExporter.getMetricsEndpoint());
 3. **Testing**: Test logging and monitoring functionality
 4. **Regular Review**: Regularly review and update monitoring rules
 
-This guide provides a comprehensive foundation for implementing robust monitoring and logging in the Docker On-Demand system, ensuring observability, reliability, and maintainability in production environments.
+This guide provides a comprehensive foundation for implementing robust monitoring and logging in the Ephemeral system, ensuring observability, reliability, and maintainability in production environments.

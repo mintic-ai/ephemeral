@@ -1,6 +1,6 @@
 ---
 title: "API Overview"
-description: "Introduction and quick start guide for the Docker On-Demand API"
+description: "Introduction and quick start guide for the Ephemeral API"
 audience: ["developers", "api-consumers"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -11,9 +11,9 @@ related_docs:
   - "examples/"
 ---
 
-# Docker On-Demand API
+# Ephemeral API
 
-The Docker On-Demand API provides a RESTful interface for managing containerized applications dynamically. The system automatically creates, monitors, and cleans up Docker containers based on demand, making it ideal for development environments, testing, and ephemeral workloads.
+The Ephemeral API provides a RESTful interface for managing containerized applications dynamically. The system automatically creates, monitors, and cleans up Docker containers based on demand, making it ideal for development environments, testing, and ephemeral workloads.
 
 ## Quick Start
 

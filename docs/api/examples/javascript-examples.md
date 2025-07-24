@@ -12,13 +12,13 @@ related_docs:
 
 # JavaScript API Examples
 
-This document provides comprehensive JavaScript examples for integrating with the Docker On-Demand API. Examples include both Node.js server-side and browser client-side implementations.
+This document provides comprehensive JavaScript examples for integrating with the Ephemeral API. Examples include both Node.js server-side and browser client-side implementations.
 
 ## Prerequisites
 
 - Node.js 16+ (for Node.js examples)
 - Modern browser with fetch API support (for browser examples)
-- Docker On-Demand system running on `http://localhost:3000`
+- Ephemeral system running on `http://localhost:3000`
 
 ## Installation
 
@@ -701,7 +701,7 @@ class BrowserApiClient {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Docker On-Demand Dashboard</title>
+    <title>Ephemeral Dashboard</title>
     <style>
         .status.healthy { color: green; }
         .status.error { color: red; }
@@ -711,7 +711,7 @@ class BrowserApiClient {
     </style>
 </head>
 <body>
-    <h1>Docker On-Demand Dashboard</h1>
+    <h1>Ephemeral Dashboard</h1>
     
     <div>
         <h2>System Status</h2>
@@ -815,7 +815,7 @@ class BrowserApiClient {
 const express = require('express');
 const app = express();
 
-// Docker On-Demand client setup
+// Ephemeral client setup
 const client = new DockerOnDemandClient();
 
 app.use(express.json());
@@ -860,7 +860,7 @@ const client = new DockerOnDemandClient();
 
 program
   .name('docker-ondemand-cli')
-  .description('CLI for Docker On-Demand API')
+  .description('CLI for Ephemeral API')
   .version('1.0.0');
 
 program
@@ -926,7 +926,7 @@ program.parse();
 ```javascript
 const { DockerOnDemandClient } = require('./docker-ondemand-client');
 
-describe('Docker On-Demand API', () => {
+describe('Ephemeral API', () => {
   let client;
   let createdContainers = [];
 

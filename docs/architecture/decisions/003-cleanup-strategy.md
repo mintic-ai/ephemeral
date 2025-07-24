@@ -15,7 +15,7 @@ informed: ["Security Team"]
 
 ## Context
 
-The Docker On-Demand system creates containers dynamically based on API requests. Without proper cleanup mechanisms, inactive containers would accumulate indefinitely, leading to resource exhaustion, security risks, and operational overhead. The system requires an intelligent cleanup strategy that balances resource efficiency with operational reliability.
+The Ephemeral system creates containers dynamically based on API requests. Without proper cleanup mechanisms, inactive containers would accumulate indefinitely, leading to resource exhaustion, security risks, and operational overhead. The system requires an intelligent cleanup strategy that balances resource efficiency with operational reliability.
 
 ### Key Requirements
 

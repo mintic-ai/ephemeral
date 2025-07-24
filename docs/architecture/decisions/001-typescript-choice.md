@@ -15,7 +15,7 @@ informed: []
 
 ## Context
 
-The Docker On-Demand system requires a robust, maintainable, and scalable codebase for container orchestration and lifecycle management. The system needs to handle complex asynchronous operations, Docker API interactions, and provide a reliable REST API interface. The choice of programming language significantly impacts development velocity, code quality, and long-term maintainability.
+The Ephemeral system requires a robust, maintainable, and scalable codebase for container orchestration and lifecycle management. The system needs to handle complex asynchronous operations, Docker API interactions, and provide a reliable REST API interface. The choice of programming language significantly impacts development velocity, code quality, and long-term maintainability.
 
 ### Key Requirements
 
@@ -28,7 +28,7 @@ The Docker On-Demand system requires a robust, maintainable, and scalable codeba
 
 ## Decision
 
-We will use **TypeScript 5.3+** as the primary development language for the Docker On-Demand system.
+We will use **TypeScript 5.3+** as the primary development language for the Ephemeral system.
 
 ## Rationale
 
@@ -181,4 +181,4 @@ class ContainerManagerError extends Error {
 
 ---
 
-*This ADR documents the decision to use TypeScript as the primary development language for the Docker On-Demand system, providing type safety, better developer experience, and improved maintainability for complex container orchestration operations.*
+*This ADR documents the decision to use TypeScript as the primary development language for the Ephemeral system, providing type safety, better developer experience, and improved maintainability for complex container orchestration operations.*

@@ -1,6 +1,6 @@
 ---
 title: "System Architecture Overview"
-description: "High-level architecture and design principles of the Docker On-Demand system"
+description: "High-level architecture and design principles of the Ephemeral system"
 audience: ["developers", "architects", "technical-leads"]
 last_updated: "2025-01-23"
 version: "1.0.0"
@@ -14,7 +14,7 @@ related_docs:
 
 ## Introduction
 
-The Docker On-Demand system is a container orchestration platform designed to provide on-demand Docker container creation, automatic lifecycle management, and intelligent cleanup. The system follows a modular, service-oriented architecture built with TypeScript and Node.js.
+The Ephemeral system is a container orchestration platform designed to provide on-demand Docker container creation, automatic lifecycle management, and intelligent cleanup. The system follows a modular, service-oriented architecture built with TypeScript and Node.js.
 
 ## System Goals
 
@@ -62,7 +62,7 @@ graph TB
         WEB_APP[Web Applications]
     end
 
-    subgraph "Docker On-Demand System"
+    subgraph "Ephemeral System"
         subgraph "API Layer"
             API_SERVER[API Server<br/>Express.js]
         end

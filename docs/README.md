@@ -1,14 +1,14 @@
 ---
-title: "Docker On-Demand Developer Documentation"
-description: "Comprehensive developer documentation for the Docker On-Demand system"
+title: "Ephemeral Developer Documentation"
+description: "Comprehensive developer documentation for the Ephemeral system"
 audience: ["developers", "administrators", "api-consumers"]
 last_updated: "2025-01-23"
 version: "1.0.0"
 ---
 
-# Docker On-Demand Developer Documentation
+# Ephemeral Developer Documentation
 
-Welcome to the comprehensive developer documentation for the Docker On-Demand system. This documentation provides detailed technical information, guides, and references to help you understand, use, extend, and deploy the system effectively.
+Welcome to the comprehensive developer documentation for the Ephemeral system. This documentation provides detailed technical information, guides, and references to help you understand, use, extend, and deploy the system effectively.
 
 ## Quick Navigation
 
