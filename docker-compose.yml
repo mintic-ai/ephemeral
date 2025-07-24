@@ -28,8 +28,8 @@ services:
     # Port mapping
     ports:
       - "3000:3000"
-      - "8000-9000:8000-9000"  # Port range for managed containers
-    
+      - "40000-41000:8000-9000"  # Port range for managed containers
+
     # Volume mounts
     volumes:
       # Remove direct Docker socket mount, use dind service instead
