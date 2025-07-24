@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  docker-on-demand:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage for development
+    image: docker-on-demand:dev
+    container_name: docker-on-demand-dev
+    
+    # Development environment
+    environment:
+      - NODE_ENV=development
+      - API_PORT=3000
+      - API_HOST=0.0.0.0
+      - DOCKER_SOCKET_PATH=/var/run/docker.sock
+      - DOCKER_DEFAULT_IMAGE=nginx:alpine
+      - CLEANUP_INTERVAL=60        # Faster cleanup for testing
+      - CLEANUP_INACTIVITY_TIMEOUT=300
+    
+    # Port mapping
+    ports:
+      - "3000:3000"
+      - "8000-9000:8000-9000"
+      - "9229:9229"  # Debug port
+    
+    # Volume mounts for development
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - .:/app                    # Source code mounting
+      - /app/node_modules         # Prevent node_modules override
+      - dev-logs:/app/logs
+    
+    # Override command for development
+    command: ["npm", "run", "dev"]
+    
+    # Remove resource limits for development
+    deploy:
+      resources: {}
+    
+    networks:
+      - docker-on-demand-network
+
+volumes:
+  dev-logs:
+    driver: local
+
+networks:
+  docker-on-demand-network:
+    driver: bridge

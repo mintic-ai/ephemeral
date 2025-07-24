@@ -1,0 +1,800 @@
+{
+	"info": {
+		"_postman_id": "docker-on-demand-api",
+		"name": "Docker On-Demand API",
+		"description": "Complete API collection for Docker On-Demand system testing and development",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "docker-on-demand"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Get System Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success field', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"pm.test('Health data is present', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('status');",
+									"    pm.expect(jsonData.data).to.have.property('containers');",
+									"    pm.expect(jsonData.data).to.have.property('docker');",
+									"    pm.expect(jsonData.data).to.have.property('system');",
+									"});",
+									"",
+									"pm.test('System status is healthy', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.status).to.equal('healthy');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check the system health and get status information including active containers, Docker version, and system metrics."
+					},
+					"response": [
+						{
+							"name": "Healthy System",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/health",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"health"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"status\": \"healthy\",\n    \"timestamp\": \"2025-01-23T10:30:00.000Z\",\n    \"version\": \"1.0.0\",\n    \"containers\": {\n      \"active\": 3,\n      \"total\": 3\n    },\n    \"docker\": {\n      \"version\": \"24.0.7\",\n      \"containers\": 5,\n      \"images\": 12\n    },\n    \"system\": {\n      \"uptime\": 3600.5,\n      \"memory\": {\n        \"rss\": 45678592,\n        \"heapTotal\": 20971520,\n        \"heapUsed\": 15728640,\n        \"external\": 1048576,\n        \"arrayBuffers\": 524288\n      }\n    }\n  }\n}"
+						}
+					]
+				}
+			],
+			"description": "Health check endpoints for monitoring system status"
+		},
+		{
+
+			"name": "Container Management",
+			"item": [
+				{
+					"name": "Create Container (Default)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Container created successfully', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('id');",
+									"    pm.expect(jsonData.data).to.have.property('status');",
+									"    pm.expect(jsonData.data).to.have.property('connection');",
+									"});",
+									"",
+									"pm.test('Container has connection details', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.connection).to.have.property('host');",
+									"    pm.expect(jsonData.data.connection).to.have.property('port');",
+									"    pm.expect(jsonData.data.connection).to.have.property('url');",
+									"});",
+									"",
+									"// Save container ID for other requests",
+									"if (pm.response.code === 201) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('containerId', jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/containers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"containers"
+							]
+						},
+						"description": "Create a new container with default settings"
+					},
+					"response": [
+						{
+							"name": "Container Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/containers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"containers"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"container_1706012345678_abc123\",\n    \"status\": \"running\",\n    \"connection\": {\n      \"host\": \"localhost\",\n      \"port\": 8080,\n      \"url\": \"http://localhost:8080\"\n    },\n    \"created_at\": \"2025-01-23T10:30:00.000Z\",\n    \"last_activity\": \"2025-01-23T10:30:00.000Z\",\n    \"image\": \"nginx:alpine\",\n    \"environment\": {}\n  }\n}"
+						}
+					]
+				},
+
+				{
+					"name": "Create Container (Custom Image)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Container uses specified image', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.image).to.equal('nginx:alpine');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"image\": \"nginx:alpine\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/containers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"containers"
+							]
+						},
+						"description": "Create a new container with a specific Docker image"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Container (With Environment)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Container has environment variables', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.environment).to.have.property('NODE_ENV');",
+									"    pm.expect(jsonData.data.environment).to.have.property('DEBUG');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"image\": \"node:18-alpine\",\n  \"environment\": {\n    \"NODE_ENV\": \"development\",\n    \"PORT\": \"3000\",\n    \"DEBUG\": \"true\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/containers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"containers"
+							]
+						},
+						"description": "Create a new container with environment variables"
+					},
+					"response": []
+				},
+			
+	{
+					"name": "List All Containers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Each container has required fields', function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.length > 0) {",
+									"        const container = jsonData.data[0];",
+									"        pm.expect(container).to.have.property('id');",
+									"        pm.expect(container).to.have.property('status');",
+									"        pm.expect(container).to.have.property('connection');",
+									"        pm.expect(container).to.have.property('image');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/containers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"containers"
+							]
+						},
+						"description": "Get a list of all containers managed by the system"
+					},
+					"response": [
+						{
+							"name": "Container List",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/containers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"containers"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"container_1706012345678_abc123\",\n      \"status\": \"running\",\n      \"connection\": {\n        \"host\": \"localhost\",\n        \"port\": 8080,\n        \"url\": \"http://localhost:8080\"\n      },\n      \"created_at\": \"2025-01-23T10:30:00.000Z\",\n      \"last_activity\": \"2025-01-23T10:35:00.000Z\",\n      \"image\": \"nginx:alpine\",\n      \"environment\": {\n        \"ENV_VAR\": \"value\"\n      }\n    }\n  ]\n}"
+						}
+					]
+				},
+
+				{
+					"name": "Get Container Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Container details are complete', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('id');",
+									"    pm.expect(jsonData.data).to.have.property('status');",
+									"    pm.expect(jsonData.data).to.have.property('connection');",
+									"    pm.expect(jsonData.data).to.have.property('metadata');",
+									"});",
+									"",
+									"pm.test('Metadata includes Docker information', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.metadata).to.have.property('dockerId');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/containers/{{containerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"containers",
+								"{{containerId}}"
+							]
+						},
+						"description": "Get detailed information about a specific container including metadata"
+					},
+					"response": [
+						{
+							"name": "Container Details",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/containers/container_1706012345678_abc123",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"containers",
+										"container_1706012345678_abc123"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"container_1706012345678_abc123\",\n    \"status\": \"running\",\n    \"connection\": {\n      \"host\": \"localhost\",\n      \"port\": 8080,\n      \"url\": \"http://localhost:8080\"\n    },\n    \"created_at\": \"2025-01-23T10:30:00.000Z\",\n    \"last_activity\": \"2025-01-23T10:35:00.000Z\",\n    \"image\": \"nginx:alpine\",\n    \"environment\": {\n      \"ENV_VAR\": \"value\"\n    },\n    \"metadata\": {\n      \"dockerId\": \"a1b2c3d4e5f6\",\n      \"networkMode\": \"bridge\",\n      \"portBindings\": {\n        \"80/tcp\": [{\"HostPort\": \"8080\"}]\n      }\n    }\n  }\n}"
+						}
+					]
+				},
+		
+		{
+					"name": "Delete Container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Container deleted successfully', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('message');",
+									"    pm.expect(jsonData.data.message).to.include('removed successfully');",
+									"});",
+									"",
+									"pm.test('Response includes container ID', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('id');",
+									"    pm.expect(jsonData.data).to.have.property('timestamp');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/containers/{{containerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"containers",
+								"{{containerId}}"
+							]
+						},
+						"description": "Delete a specific container and stop monitoring it"
+					},
+					"response": [
+						{
+							"name": "Container Deleted",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/containers/container_1706012345678_abc123",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"containers",
+										"container_1706012345678_abc123"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"container_1706012345678_abc123\",\n    \"message\": \"Container removed successfully\",\n    \"timestamp\": \"2025-01-23T10:40:00.000Z\"\n  }\n}"
+						}
+					]
+				}
+			],
+			"description": "Container lifecycle management operations"
+		},
+
+		{
+			"name": "Error Scenarios",
+			"item": [
+				{
+					"name": "Invalid JSON Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Error response format is correct', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"    pm.expect(jsonData.error).to.have.property('code');",
+									"    pm.expect(jsonData.error).to.have.property('message');",
+									"    pm.expect(jsonData.error).to.have.property('timestamp');",
+									"});",
+									"",
+									"pm.test('Error code is INVALID_JSON', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error.code).to.equal('INVALID_JSON');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"invalid\": json}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/containers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"containers"
+							]
+						},
+						"description": "Test error handling for invalid JSON in request body"
+					},
+					"response": [
+						{
+							"name": "Invalid JSON Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"invalid\": json}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/containers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"containers"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"INVALID_JSON\",\n    \"message\": \"Request body contains invalid JSON\",\n    \"timestamp\": \"2025-01-23T10:40:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+
+				{
+					"name": "Container Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Error code is CONTAINER_NOT_FOUND', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error.code).to.equal('CONTAINER_NOT_FOUND');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/containers/nonexistent_container_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"containers",
+								"nonexistent_container_id"
+							]
+						},
+						"description": "Test error handling for non-existent container ID"
+					},
+					"response": [
+						{
+							"name": "Container Not Found Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/containers/nonexistent_container_id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"containers",
+										"nonexistent_container_id"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"CONTAINER_NOT_FOUND\",\n    \"message\": \"Container with ID nonexistent_container_id not found\",\n    \"timestamp\": \"2025-01-23T10:40:00.000Z\"\n  }\n}"
+						}
+					]
+				},
+				{
+					"name": "Invalid Endpoint",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Error code is ENDPOINT_NOT_FOUND', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error.code).to.equal('ENDPOINT_NOT_FOUND');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/invalid-endpoint",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"invalid-endpoint"
+							]
+						},
+						"description": "Test error handling for invalid API endpoints"
+					},
+					"response": [
+						{
+							"name": "Endpoint Not Found Error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/invalid-endpoint",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"invalid-endpoint"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ENDPOINT_NOT_FOUND\",\n    \"message\": \"Endpoint GET /invalid-endpoint not found\",\n    \"timestamp\": \"2025-01-23T10:40:00.000Z\"\n  }\n}"
+						}
+					]
+				}
+			],
+			"description": "Error handling and validation test scenarios"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "containerId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

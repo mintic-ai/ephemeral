@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  docker-on-demand:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: docker-on-demand:latest
+    container_name: docker-on-demand-app
+    restart: unless-stopped
+    
+    # Environment configuration
+    environment:
+      - NODE_ENV=production
+      - API_PORT=3000
+      - API_HOST=0.0.0.0
+      - DOCKER_SOCKET_PATH=/var/run/docker.sock
+      - DOCKER_DEFAULT_IMAGE=nginx:alpine
+      - DOCKER_NETWORK_MODE=bridge
+      - DOCKER_PORT_RANGE_START=8000
+      - DOCKER_PORT_RANGE_END=9000
+      - CLEANUP_INTERVAL=300
+      - CLEANUP_INACTIVITY_TIMEOUT=600
+      - CLEANUP_MAX_RETRY_ATTEMPTS=3
+      - CLEANUP_FORCE_REMOVAL_TIMEOUT=30
+    
+    # Port mapping
+    ports:
+      - "3000:3000"
+      - "8000-9000:8000-9000"  # Port range for managed containers
+    
+    # Volume mounts
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Docker socket access
+      - app-logs:/app/logs                            # Application logs
+      - app-data:/app/data                            # Application data
+    
+    # Network configuration
+    networks:
+      - docker-on-demand-network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+# Named volumes
+volumes:
+  app-logs:
+    driver: local
+  app-data:
+    driver: local
+
+# Custom network
+networks:
+  docker-on-demand-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

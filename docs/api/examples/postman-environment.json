@@ -1,0 +1,51 @@
+{
+	"id": "docker-on-demand-env",
+	"name": "Docker On-Demand Environment",
+	"values": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "default",
+			"enabled": true,
+			"description": "Base URL for the Docker On-Demand API"
+		},
+		{
+			"key": "apiHost",
+			"value": "localhost",
+			"type": "default",
+			"enabled": true,
+			"description": "API server host"
+		},
+		{
+			"key": "apiPort",
+			"value": "3000",
+			"type": "default",
+			"enabled": true,
+			"description": "API server port"
+		},
+		{
+			"key": "containerId",
+			"value": "",
+			"type": "default",
+			"enabled": true,
+			"description": "Container ID for operations (set automatically from create responses)"
+		},
+		{
+			"key": "testImage",
+			"value": "nginx:alpine",
+			"type": "default",
+			"enabled": true,
+			"description": "Default Docker image for testing"
+		},
+		{
+			"key": "testImageNode",
+			"value": "node:18-alpine",
+			"type": "default",
+			"enabled": true,
+			"description": "Node.js Docker image for testing"
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2025-01-23T10:00:00.000Z",
+	"_postman_exported_using": "Postman/10.0.0"
+}
