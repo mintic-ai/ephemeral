@@ -313,7 +313,7 @@ curl -X POST http://localhost:3000/containers \
 
    ```bash
    git clone <repository-url>
-   cd docker-on-demand
+   cd ephemeral
    ```
 
 2. **Build and run with Docker Compose**:
@@ -323,7 +323,7 @@ curl -X POST http://localhost:3000/containers \
    docker-compose up -d
 
    # View logs
-   docker-compose logs -f docker-on-demand
+   docker-compose logs -f ephemeral
 
    # Stop the application
    docker-compose down
@@ -339,8 +339,8 @@ curl -X POST http://localhost:3000/containers \
    docker run -d \
      -p 3000:3000 \
      -v /var/run/docker.sock:/var/run/docker.sock:ro \
-     --name docker-on-demand \
-     docker-on-demand:latest
+     --name ephemeral \
+     ephemeral:latest
    ```
 
 ### Option 2: Local Development
@@ -349,7 +349,7 @@ curl -X POST http://localhost:3000/containers \
 
    ```bash
    git clone <repository-url>
-   cd docker-on-demand
+   cd ephemeral
    ```
 
 2. **Install dependencies**:
@@ -448,10 +448,10 @@ The project includes a comprehensive build script with multiple options:
 docker-compose up -d
 
 # View logs
-docker-compose logs -f docker-on-demand
+docker-compose logs -f ephemeral
 
 # Scale the application
-docker-compose up -d --scale docker-on-demand=3
+docker-compose up -d --scale ephemeral=3
 
 # Stop services
 docker-compose down

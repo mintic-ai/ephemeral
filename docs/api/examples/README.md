@@ -65,7 +65,7 @@ Docker On-Demand API/
 
 **Option B: Import from URL**
 ```
-https://raw.githubusercontent.com/your-repo/docker-on-demand/main/docs/api/examples/postman-collection.json
+https://raw.githubusercontent.com/your-repo/ephemeral/main/docs/api/examples/postman-collection.json
 ```
 
 #### 2. Import Environment
@@ -191,8 +191,8 @@ newman run postman-collection.json -e postman-environment.json -r html
 
 ```json
 {
-  "baseUrl": "http://docker-on-demand:3000",
-  "apiHost": "docker-on-demand",
+  "baseUrl": "http://ephemeral:3000",
+  "apiHost": "ephemeral",
   "apiPort": "3000"
 }
 ```

@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "docker-on-demand-api",
+		"_postman_id": "ephemeral-api",
 		"name": "Docker On-Demand API",
 		"description": "Complete API collection for Docker On-Demand system testing and development",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "docker-on-demand"
+		"_exporter_id": "ephemeral"
 	},
 	"item": [
 		{

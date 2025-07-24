@@ -1,13 +1,13 @@
 version: '3.8'
 
 services:
-  docker-on-demand:
+  ephemeral:
     build:
       context: .
       dockerfile: Dockerfile
       target: builder  # Use builder stage for development
-    image: docker-on-demand:dev
-    container_name: docker-on-demand-dev
+    image: ephemeral:dev
+    container_name: ephemeral-dev
     
     # Development environment
     environment:
@@ -40,12 +40,12 @@ services:
       resources: {}
     
     networks:
-      - docker-on-demand-network
+      - ephemeral-network
 
 volumes:
   dev-logs:
     driver: local
 
 networks:
-  docker-on-demand-network:
+  ephemeral-network:
     driver: bridge

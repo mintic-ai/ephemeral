@@ -232,7 +232,7 @@ API_AUTH_ENABLED=true
 # docker-compose.yml
 version: '3.8'
 services:
-  docker-on-demand:
+  ephemeral:
     build: .
     environment:
       - DOCKER_SOCKET_PATH=/var/run/docker.sock
@@ -422,7 +422,7 @@ LOG_FORMAT=json
 LOG_DESTINATION=console
 
 # Log file path (required if destination is file or both)
-# LOG_FILE_PATH=/var/log/docker-on-demand.log
+# LOG_FILE_PATH=/var/log/ephemeral.log
 
 # Maximum log file size
 LOG_MAX_FILE_SIZE=10mb

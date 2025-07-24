@@ -50,7 +50,7 @@ describe('ApiServer', () => {
       url: 'http://localhost:8001'
     },
     environment: { NODE_ENV: 'test' },
-    metadata: { dockerName: 'docker-demand-test-123' }
+    metadata: { dockerName: 'ephemeral-test-123' }
   };
 
   beforeEach(() => {
@@ -416,7 +416,7 @@ describe('ApiServer', () => {
           last_activity: '2025-01-23T10:10:00.000Z',
           image: 'alpine:latest',
           environment: { NODE_ENV: 'test' },
-          metadata: { dockerName: 'docker-demand-test-123' }
+          metadata: { dockerName: 'ephemeral-test-123' }
         }
       });
 

@@ -48,7 +48,7 @@ Before setting up the development environment, ensure you have the following ins
 
 ```bash
 git clone <repository-url>
-cd docker-on-demand
+cd ephemeral
 ```
 
 ### 2. Install Dependencies

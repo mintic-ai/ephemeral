@@ -627,7 +627,7 @@ export class SyslogLogger {
     const priority = this.facility * 8 + this.levelToPriority(entry.level);
     const timestamp = new Date(entry.timestamp).toISOString();
     const hostname = require('os').hostname();
-    const appName = 'docker-on-demand';
+    const appName = 'ephemeral';
     
     const message = `<${priority}>${timestamp} ${hostname} ${appName}: [${entry.component}] ${entry.message}`;
     const buffer = Buffer.from(message);
@@ -1112,7 +1112,7 @@ services:
     image: docker.elastic.co/beats/filebeat:7.15.0
     volumes:
       - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
-      - /var/log/docker-on-demand:/var/log/docker-on-demand
+      - /var/log/ephemeral:/var/log/ephemeral
     depends_on:
       - logstash
 

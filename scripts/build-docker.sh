@@ -6,7 +6,7 @@
 set -e
 
 # Default values
-IMAGE_NAME="docker-on-demand"
+IMAGE_NAME="ephemeral"
 TAG="latest"
 BUILD_ARGS=""
 PUSH=false
@@ -46,7 +46,7 @@ Usage: $0 [OPTIONS]
 Build Docker image for Docker On-Demand application
 
 OPTIONS:
-    -n, --name NAME         Image name (default: docker-on-demand)
+    -n, --name NAME         Image name (default: ephemeral)
     -t, --tag TAG          Image tag (default: latest)
     -p, --push             Push image to registry after build
     --platform PLATFORM   Target platform (e.g., linux/amd64,linux/arm64)

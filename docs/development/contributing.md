@@ -52,12 +52,12 @@ We welcome various types of contributions:
 1. Fork the repository on GitHub
 2. Clone your fork locally:
    ```bash
-   git clone https://github.com/your-username/docker-on-demand.git
-   cd docker-on-demand
+   git clone https://github.com/your-username/ephemeral.git
+   cd ephemeral
    ```
 3. Add the upstream remote:
    ```bash
-   git remote add upstream https://github.com/original-owner/docker-on-demand.git
+   git remote add upstream https://github.com/original-owner/ephemeral.git
    ```
 
 ### 2. Create a Feature Branch

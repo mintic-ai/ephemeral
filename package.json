@@ -1,5 +1,5 @@
 {
-  "name": "docker-on-demand",
+  "name": "ephemeral",
   "version": "1.0.0",
   "description": "Docker container orchestration system with automatic lifecycle management",
   "main": "dist/index.js",

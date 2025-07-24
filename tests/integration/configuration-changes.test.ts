@@ -52,7 +52,7 @@ describe('Configuration Changes Integration Tests', () => {
     try {
       const containers = await docker.listContainers({ all: true });
       const testContainers = containers.filter(container => 
-        container.Names.some(name => name.includes('docker-demand'))
+        container.Names.some(name => name.includes('ephemeral'))
       );
       
       for (const container of testContainers) {

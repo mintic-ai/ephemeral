@@ -34,7 +34,7 @@ Create `.vscode/launch.json`:
       "args": ["src/index.ts"],
       "env": {
         "NODE_ENV": "development",
-        "DEBUG": "docker-demand:*"
+        "DEBUG": "ephemeral:*"
       },
       "console": "integratedTerminal",
       "restart": true,
@@ -100,10 +100,10 @@ Enable debug logging with environment variables:
 DEBUG=* npm run dev
 
 # Enable specific module logs
-DEBUG=docker-demand:* npm run dev
+DEBUG=ephemeral:* npm run dev
 
 # Enable container manager logs only
-DEBUG=docker-demand:container-manager npm run dev
+DEBUG=ephemeral:container-manager npm run dev
 ```
 
 ## Application Debugging
@@ -136,7 +136,7 @@ logger.logContainerOperation('create', containerId, true, {
 ```bash
 # .env.debug
 NODE_ENV=development
-DEBUG=docker-demand:*
+DEBUG=ephemeral:*
 LOG_LEVEL=debug
 
 # Docker debugging

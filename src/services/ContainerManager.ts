@@ -63,7 +63,7 @@ export class ContainerManager {
           NetworkMode: this.config.docker.networkMode,
           AutoRemove: false
         },
-        name: `docker-demand-${containerId}`
+        name: `ephemeral-${containerId}`
       };
 
       // Create container using Docker API with retry logic
