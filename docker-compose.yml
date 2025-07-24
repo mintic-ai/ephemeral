@@ -12,6 +12,9 @@ services:
       - NODE_ENV=production
       - API_PORT=3000
       - API_HOST=0.0.0.0
+      # Use Docker-in-Docker daemon
+      - DOCKER_HOST=tcp://docker:2375
+      # Optionally keep DOCKER_SOCKET_PATH for compatibility
       - DOCKER_SOCKET_PATH=/var/run/docker.sock
       - DOCKER_DEFAULT_IMAGE=nginx:alpine
       - DOCKER_NETWORK_MODE=bridge
@@ -29,13 +32,15 @@ services:
     
     # Volume mounts
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro  # Docker socket access
+      # Remove direct Docker socket mount, use dind service instead
+      # - /var/run/docker.sock:/var/run/docker.sock     # Docker socket access
       - app-logs:/app/logs                            # Application logs
       - app-data:/app/data                            # Application data
     
     # Network configuration
     networks:
       - ephemeral-network
+      - dind-net
     
     # Health check
     healthcheck:
@@ -55,6 +60,23 @@ services:
           cpus: '0.5'
           memory: 256M
 
+  # Docker-in-Docker service
+  docker:
+    image: docker:dind
+    container_name: ephemeral-dind
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=
+    networks:
+      - ephemeral-network
+      - dind-net
+    healthcheck:
+      test: ["CMD", "docker", "info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 # Named volumes
 volumes:
   app-logs:
@@ -69,3 +91,5 @@ networks:
     ipam:
       config:
         - subnet: 172.30.0.0/16
+  dind-net:
+    driver: bridge

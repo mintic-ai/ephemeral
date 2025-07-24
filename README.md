@@ -307,7 +307,39 @@ curl -X POST http://localhost:3000/containers \
 
 ## Installation
 
+
 ### Option 1: Docker (Recommended)
+
+#### Using Docker-in-Docker (dind)
+
+This project supports running with a Docker-in-Docker (dind) service for fully isolated Docker operations inside the container. This is useful for CI/CD, testing, or when you do not want to mount the host Docker socket.
+
+**How it works:**
+
+- The `docker-compose.yml` includes a `docker` service using the `docker:dind` image.
+- The main `ephemeral` service communicates with the dind daemon via the `DOCKER_HOST=tcp://docker:2375` environment variable.
+- No need to mount `/var/run/docker.sock` from the host.
+- Both services share a custom network for communication.
+
+**To use dind:**
+
+1. Start the stack as usual:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+2. The main app will use the dind daemon for all Docker operations.
+
+**Security Note:**
+
+- The dind service runs in privileged mode. This is required for Docker-in-Docker but should be used with caution in production environments.
+- For most local development and CI/CD use cases, this is acceptable.
+
+**Compatibility:**
+
+- If you want to use the host Docker daemon instead, comment out the dind service and set `DOCKER_HOST` and volume mounts accordingly.
+
 
 1. **Clone the repository**:
 
