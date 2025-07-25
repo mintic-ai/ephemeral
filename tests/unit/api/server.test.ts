@@ -50,7 +50,11 @@ describe('ApiServer', () => {
       url: 'http://localhost:8001'
     },
     environment: { NODE_ENV: 'test' },
-    metadata: { dockerName: 'ephemeral-test-123' }
+    metadata: { dockerName: 'ephemeral-test-123' },
+    cleanupStrategy: {
+      type: 'activity',
+      activityTimeout: 300
+    }
   };
 
   beforeEach(() => {
@@ -169,7 +173,11 @@ describe('ApiServer', () => {
           created_at: '2025-01-23T10:00:00.000Z',
           last_activity: '2025-01-23T10:05:00.000Z',
           image: 'alpine:latest',
-          environment: { NODE_ENV: 'test' }
+          environment: { NODE_ENV: 'test' },
+          cleanup_strategy: {
+            type: 'activity',
+            activity_timeout: 300
+          }
         }
       });
 
@@ -334,6 +342,333 @@ describe('ApiServer', () => {
         }
       });
     });
+
+    describe('Cleanup Strategy Validation', () => {
+      it('should accept valid activity-based cleanup strategy', async () => {
+        const containerWithActivityStrategy = {
+          ...mockContainer,
+          cleanupStrategy: {
+            type: 'activity',
+            activityTimeout: 600,
+            activityThresholds: {
+              minCpuPercent: 5,
+              minMemoryMB: 100,
+              minNetworkBytesPerSec: 1024
+            }
+          }
+        };
+        
+        mockContainerManager.createContainer = vi.fn().mockResolvedValue(containerWithActivityStrategy);
+
+        const createRequest = {
+          image: 'alpine:latest',
+          cleanupStrategy: {
+            type: 'activity',
+            activityTimeout: 600,
+            activityThresholds: {
+              minCpuPercent: 5,
+              minMemoryMB: 100,
+              minNetworkBytesPerSec: 1024
+            }
+          }
+        };
+
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send(createRequest)
+          .expect(201);
+
+        expect(response.body).toMatchObject({
+          success: true,
+          data: {
+            cleanup_strategy: {
+              type: 'activity',
+              activity_timeout: 600,
+              activity_thresholds: {
+                min_cpu_percent: 5,
+                min_memory_mb: 100,
+                min_network_bytes_per_sec: 1024
+              }
+            }
+          }
+        });
+      });
+
+      it('should accept valid lifetime-based cleanup strategy', async () => {
+        const containerWithLifetimeStrategy = {
+          ...mockContainer,
+          cleanupStrategy: {
+            type: 'lifetime',
+            maxLifetime: 3600
+          }
+        };
+        
+        mockContainerManager.createContainer = vi.fn().mockResolvedValue(containerWithLifetimeStrategy);
+
+        const createRequest = {
+          image: 'alpine:latest',
+          cleanupStrategy: {
+            type: 'lifetime',
+            maxLifetime: 3600
+          }
+        };
+
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send(createRequest)
+          .expect(201);
+
+        expect(response.body).toMatchObject({
+          success: true,
+          data: {
+            cleanup_strategy: {
+              type: 'lifetime',
+              max_lifetime: 3600
+            }
+          }
+        });
+      });
+
+      it('should accept valid hybrid cleanup strategy', async () => {
+        const containerWithHybridStrategy = {
+          ...mockContainer,
+          cleanupStrategy: {
+            type: 'hybrid',
+            maxLifetime: 7200,
+            activityTimeout: 900
+          }
+        };
+        
+        mockContainerManager.createContainer = vi.fn().mockResolvedValue(containerWithHybridStrategy);
+
+        const createRequest = {
+          image: 'alpine:latest',
+          cleanupStrategy: {
+            type: 'hybrid',
+            maxLifetime: 7200,
+            activityTimeout: 900
+          }
+        };
+
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send(createRequest)
+          .expect(201);
+
+        expect(response.body).toMatchObject({
+          success: true,
+          data: {
+            cleanup_strategy: {
+              type: 'hybrid',
+              max_lifetime: 7200,
+              activity_timeout: 900
+            }
+          }
+        });
+      });
+
+      it('should reject invalid cleanup strategy type', async () => {
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send({
+            cleanupStrategy: {
+              type: 'invalid'
+            }
+          })
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid cleanup strategy: type must be one of: activity, lifetime, hybrid'
+          }
+        });
+      });
+
+      it('should reject cleanup strategy that is not an object', async () => {
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send({
+            cleanupStrategy: 'invalid'
+          })
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'cleanupStrategy must be an object if provided'
+          }
+        });
+      });
+
+      it('should reject activity strategy without activityTimeout', async () => {
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send({
+            cleanupStrategy: {
+              type: 'activity'
+            }
+          })
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid cleanup strategy: activityTimeout is required for activity-based cleanup strategy'
+          }
+        });
+      });
+
+      it('should reject lifetime strategy without maxLifetime', async () => {
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send({
+            cleanupStrategy: {
+              type: 'lifetime'
+            }
+          })
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid cleanup strategy: maxLifetime is required for lifetime-based cleanup strategy'
+          }
+        });
+      });
+
+      it('should reject hybrid strategy without any timeout values', async () => {
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send({
+            cleanupStrategy: {
+              type: 'hybrid'
+            }
+          })
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid cleanup strategy: hybrid cleanup strategy requires either maxLifetime or activityTimeout (or both)'
+          }
+        });
+      });
+
+      it('should reject negative maxLifetime', async () => {
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send({
+            cleanupStrategy: {
+              type: 'lifetime',
+              maxLifetime: -100
+            }
+          })
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid cleanup strategy: maxLifetime must be a positive number'
+          }
+        });
+      });
+
+      it('should reject negative activityTimeout', async () => {
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send({
+            cleanupStrategy: {
+              type: 'activity',
+              activityTimeout: -300
+            }
+          })
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid cleanup strategy: activityTimeout must be a positive number'
+          }
+        });
+      });
+
+      it('should reject invalid CPU threshold', async () => {
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send({
+            cleanupStrategy: {
+              type: 'activity',
+              activityTimeout: 300,
+              activityThresholds: {
+                minCpuPercent: 150
+              }
+            }
+          })
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid cleanup strategy: activityThresholds.minCpuPercent must be a number between 0 and 100'
+          }
+        });
+      });
+
+      it('should reject negative memory threshold', async () => {
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send({
+            cleanupStrategy: {
+              type: 'activity',
+              activityTimeout: 300,
+              activityThresholds: {
+                minMemoryMB: -50
+              }
+            }
+          })
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid cleanup strategy: activityThresholds.minMemoryMB must be a positive number'
+          }
+        });
+      });
+
+      it('should reject negative network threshold', async () => {
+        const response = await request(apiServer.getApp())
+          .post('/containers')
+          .send({
+            cleanupStrategy: {
+              type: 'activity',
+              activityTimeout: 300,
+              activityThresholds: {
+                minNetworkBytesPerSec: -1024
+              }
+            }
+          })
+          .expect(400);
+
+        expect(response.body).toMatchObject({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid cleanup strategy: activityThresholds.minNetworkBytesPerSec must be a positive number'
+          }
+        });
+      });
+    });
   });
 
   describe('GET /containers', () => {
@@ -358,7 +693,11 @@ describe('ApiServer', () => {
           created_at: '2025-01-23T10:00:00.000Z',
           last_activity: '2025-01-23T10:05:00.000Z',
           image: 'alpine:latest',
-          environment: { NODE_ENV: 'test' }
+          environment: { NODE_ENV: 'test' },
+          cleanup_strategy: {
+            type: 'activity',
+            activity_timeout: 300
+          }
         }]
       });
     });
@@ -416,7 +755,11 @@ describe('ApiServer', () => {
           last_activity: '2025-01-23T10:10:00.000Z',
           image: 'alpine:latest',
           environment: { NODE_ENV: 'test' },
-          metadata: { dockerName: 'ephemeral-test-123' }
+          metadata: { dockerName: 'ephemeral-test-123' },
+          cleanup_strategy: {
+            type: 'activity',
+            activity_timeout: 300
+          }
         }
       });
 

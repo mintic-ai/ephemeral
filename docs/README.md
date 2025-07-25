@@ -2,7 +2,7 @@
 title: "Ephemeral Developer Documentation"
 description: "Comprehensive developer documentation for the Ephemeral system"
 audience: ["developers", "administrators", "api-consumers"]
-last_updated: "2025-01-23"
+last_updated: "2025-01-25"
 version: "1.0.0"
 ---
 
@@ -114,6 +114,7 @@ Found an error or want to improve the documentation? We welcome contributions!
 - [ADR 001: TypeScript Choice](./architecture/decisions/001-typescript-choice.md)
 - [ADR 002: Docker Integration](./architecture/decisions/002-docker-integration.md)
 - [ADR 003: Cleanup Strategy](./architecture/decisions/003-cleanup-strategy.md)
+- [ADR 004: Custom Cleanup Strategies](./architecture/decisions/004-cleanup-strategies.md)
 
 ### API Reference
 - [API Overview](./api/README.md)
@@ -144,4 +145,4 @@ Found an error or want to improve the documentation? We welcome contributions!
 
 ---
 
-*Last updated: January 23, 2025 | Version: 1.0.0*
+*Last updated: January 25, 2025 | Version: 1.0.0*

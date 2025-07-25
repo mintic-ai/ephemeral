@@ -3,7 +3,7 @@ import { CleanupScheduler, CleanupSchedulerError } from '../../../src/services/C
 import { ContainerManager } from '../../../src/services/ContainerManager.js';
 import { ActivityMonitor } from '../../../src/services/ActivityMonitor.js';
 import { ConfigManager } from '../../../src/services/ConfigManager.js';
-import { Container } from '../../../src/models/Container.js';
+import { Container, CleanupStrategy } from '../../../src/models/Container.js';
 import { SystemConfig } from '../../../src/models/SystemConfig.js';
 
 // Mock node-cron
@@ -181,7 +181,8 @@ describe('CleanupScheduler', () => {
         lastActivity: new Date('2025-01-23T10:00:00Z'),
         connection: { host: 'localhost', port: 8001 },
         environment: {},
-        metadata: {}
+        metadata: {},
+        cleanupStrategy: { type: 'activity', activityTimeout: 300 }
       },
       {
         id: 'container2',
@@ -192,12 +193,17 @@ describe('CleanupScheduler', () => {
         lastActivity: new Date('2025-01-23T10:00:00Z'),
         connection: { host: 'localhost', port: 8002 },
         environment: {},
-        metadata: {}
+        metadata: {},
+        cleanupStrategy: { type: 'activity', activityTimeout: 300 }
       }
     ];
 
     beforeEach(() => {
       mockContainerManager.listContainers.mockResolvedValue(mockContainers);
+      // Mock getContainer to return the container when requested
+      mockContainerManager.getContainer.mockImplementation((id: string) => 
+        mockContainers.find(c => c.id === id) || null
+      );
     });
 
     it('should perform cleanup and remove inactive containers', async () => {
@@ -306,10 +312,12 @@ describe('CleanupScheduler', () => {
         lastActivity: new Date('2025-01-23T10:00:00Z'),
         connection: { host: 'localhost', port: 8001 },
         environment: {},
-        metadata: {}
+        metadata: {},
+        cleanupStrategy: { type: 'activity', activityTimeout: 300 }
       };
 
       mockContainerManager.listContainers.mockResolvedValue([container]);
+      mockContainerManager.getContainer.mockReturnValue(container);
 
       // Test case 1: Container is still active (within timeout)
       let currentTime = new Date('2025-01-23T10:04:00Z'); // 4 minutes after last activity
@@ -342,7 +350,8 @@ describe('CleanupScheduler', () => {
         lastActivity: new Date('2025-01-23T10:00:00Z'),
         connection: { host: 'localhost', port: 8001 },
         environment: {},
-        metadata: {}
+        metadata: {},
+        cleanupStrategy: { type: 'activity', activityTimeout: 60 }
       };
 
       mockContainerManager.listContainers.mockResolvedValue([container]);
@@ -390,6 +399,424 @@ describe('CleanupScheduler', () => {
     });
   });
 
+  describe('cleanup strategies', () => {
+    describe('activity-based cleanup', () => {
+      it('should remove containers based on activity timeout', async () => {
+        const container: Container = {
+          id: 'activity-container',
+          dockerId: 'docker-activity',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { type: 'activity', activityTimeout: 180 } // 3 minutes
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+
+        // Test case 1: Container is still active (within timeout)
+        vi.setSystemTime(new Date('2025-01-23T10:02:00Z')); // 2 minutes after last activity
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:00:00Z'));
+
+        let result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(0);
+
+        // Test case 2: Container is inactive (exceeds timeout)
+        vi.setSystemTime(new Date('2025-01-23T10:04:00Z')); // 4 minutes after last activity
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:00:00Z'));
+
+        result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+        expect(mockContainerManager.removeContainer).toHaveBeenCalledWith('activity-container');
+      });
+
+      it('should use global config timeout when strategy timeout is not specified', async () => {
+        const container: Container = {
+          id: 'activity-container',
+          dockerId: 'docker-activity',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { type: 'activity' } // No activityTimeout specified
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+
+        // Use global config timeout (300 seconds = 5 minutes)
+        vi.setSystemTime(new Date('2025-01-23T10:06:00Z')); // 6 minutes after last activity
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:00:00Z'));
+
+        const result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+      });
+
+      it('should remove containers with no activity records', async () => {
+        const container: Container = {
+          id: 'no-activity-container',
+          dockerId: 'docker-no-activity',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { type: 'activity', activityTimeout: 300 }
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+        mockActivityMonitor.getLastActivity.mockReturnValue(null);
+
+        const result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+      });
+    });
+
+    describe('lifetime-based cleanup', () => {
+      it('should remove containers based on maximum lifetime', async () => {
+        const container: Container = {
+          id: 'lifetime-container',
+          dockerId: 'docker-lifetime',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { type: 'lifetime', maxLifetime: 600 } // 10 minutes
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+
+        // Test case 1: Container is within lifetime limit
+        vi.setSystemTime(new Date('2025-01-23T10:08:00Z')); // 8 minutes after creation
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:07:00Z')); // Recent activity
+
+        let result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(0);
+
+        // Test case 2: Container exceeds lifetime limit (regardless of activity)
+        vi.setSystemTime(new Date('2025-01-23T10:12:00Z')); // 12 minutes after creation
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:11:00Z')); // Very recent activity
+
+        result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+        expect(mockContainerManager.removeContainer).toHaveBeenCalledWith('lifetime-container');
+      });
+
+      it('should remove containers with no maxLifetime configured', async () => {
+        const container: Container = {
+          id: 'no-lifetime-container',
+          dockerId: 'docker-no-lifetime',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { type: 'lifetime' } // No maxLifetime specified
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:05:00Z'));
+
+        const result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+      });
+    });
+
+    describe('hybrid cleanup', () => {
+      it('should remove containers when activity timeout is reached first', async () => {
+        const container: Container = {
+          id: 'hybrid-container',
+          dockerId: 'docker-hybrid',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { 
+            type: 'hybrid', 
+            activityTimeout: 300, // 5 minutes
+            maxLifetime: 1800 // 30 minutes
+          }
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+
+        // Container is inactive for 6 minutes but only 8 minutes old (activity timeout reached first)
+        vi.setSystemTime(new Date('2025-01-23T10:08:00Z'));
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:02:00Z')); // 6 minutes ago
+
+        const result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+        expect(mockContainerManager.removeContainer).toHaveBeenCalledWith('hybrid-container');
+      });
+
+      it('should remove containers when lifetime limit is reached first', async () => {
+        const container: Container = {
+          id: 'hybrid-container',
+          dockerId: 'docker-hybrid',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { 
+            type: 'hybrid', 
+            activityTimeout: 1800, // 30 minutes
+            maxLifetime: 600 // 10 minutes
+          }
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+
+        // Container is active (2 minutes ago) but 12 minutes old (lifetime limit reached first)
+        vi.setSystemTime(new Date('2025-01-23T10:12:00Z'));
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:10:00Z')); // 2 minutes ago
+
+        const result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+        expect(mockContainerManager.removeContainer).toHaveBeenCalledWith('hybrid-container');
+      });
+
+      it('should not remove containers when neither condition is met', async () => {
+        const container: Container = {
+          id: 'hybrid-container',
+          dockerId: 'docker-hybrid',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { 
+            type: 'hybrid', 
+            activityTimeout: 600, // 10 minutes
+            maxLifetime: 1800 // 30 minutes
+          }
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+
+        // Container is active (2 minutes ago) and only 5 minutes old (neither condition met)
+        vi.setSystemTime(new Date('2025-01-23T10:05:00Z'));
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:03:00Z')); // 2 minutes ago
+
+        const result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(0);
+      });
+
+      it('should handle hybrid strategy with only activity timeout', async () => {
+        const container: Container = {
+          id: 'hybrid-activity-only',
+          dockerId: 'docker-hybrid-activity',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { 
+            type: 'hybrid', 
+            activityTimeout: 300 // Only activity timeout, no maxLifetime
+          }
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+
+        vi.setSystemTime(new Date('2025-01-23T10:06:00Z')); // 6 minutes after creation
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:00:00Z')); // 6 minutes ago
+
+        const result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+      });
+
+      it('should handle hybrid strategy with only lifetime limit', async () => {
+        const container: Container = {
+          id: 'hybrid-lifetime-only',
+          dockerId: 'docker-hybrid-lifetime',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { 
+            type: 'hybrid', 
+            maxLifetime: 300 // Only lifetime limit, no activityTimeout
+          }
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+
+        vi.setSystemTime(new Date('2025-01-23T10:06:00Z')); // 6 minutes after creation
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:05:00Z')); // 1 minute ago (active)
+
+        const result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+      });
+
+      it('should handle hybrid strategy with no activity records', async () => {
+        const container: Container = {
+          id: 'hybrid-no-activity',
+          dockerId: 'docker-hybrid-no-activity',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { 
+            type: 'hybrid', 
+            activityTimeout: 600,
+            maxLifetime: 1800
+          }
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+        mockActivityMonitor.getLastActivity.mockReturnValue(null);
+
+        const result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+      });
+    });
+
+    describe('unknown strategy handling', () => {
+      it('should fall back to activity-based cleanup for unknown strategy types', async () => {
+        const container: Container = {
+          id: 'unknown-strategy-container',
+          dockerId: 'docker-unknown',
+          image: 'alpine:latest',
+          status: 'running',
+          createdAt: new Date('2025-01-23T10:00:00Z'),
+          lastActivity: new Date('2025-01-23T10:00:00Z'),
+          connection: { host: 'localhost', port: 8001 },
+          environment: {},
+          metadata: {},
+          cleanupStrategy: { 
+            type: 'unknown' as any, // Invalid strategy type
+            activityTimeout: 300
+          }
+        };
+
+        mockContainerManager.listContainers.mockResolvedValue([container]);
+        mockContainerManager.getContainer.mockReturnValue(container);
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+
+        vi.setSystemTime(new Date('2025-01-23T10:06:00Z')); // 6 minutes after last activity
+        mockActivityMonitor.getLastActivity.mockReturnValue(new Date('2025-01-23T10:00:00Z'));
+
+        const result = await cleanupScheduler.performManualCleanup();
+        expect(result.containersRemoved).toBe(1);
+      });
+    });
+
+    describe('mixed cleanup strategies', () => {
+      it('should handle containers with different cleanup strategies in the same cleanup run', async () => {
+        const containers: Container[] = [
+          {
+            id: 'activity-container',
+            dockerId: 'docker-activity',
+            image: 'alpine:latest',
+            status: 'running',
+            createdAt: new Date('2025-01-23T10:00:00Z'),
+            lastActivity: new Date('2025-01-23T10:00:00Z'),
+            connection: { host: 'localhost', port: 8001 },
+            environment: {},
+            metadata: {},
+            cleanupStrategy: { type: 'activity', activityTimeout: 300 } // 5 minutes
+          },
+          {
+            id: 'lifetime-container',
+            dockerId: 'docker-lifetime',
+            image: 'alpine:latest',
+            status: 'running',
+            createdAt: new Date('2025-01-23T10:00:00Z'),
+            lastActivity: new Date('2025-01-23T10:00:00Z'),
+            connection: { host: 'localhost', port: 8002 },
+            environment: {},
+            metadata: {},
+            cleanupStrategy: { type: 'lifetime', maxLifetime: 480 } // 8 minutes
+          },
+          {
+            id: 'hybrid-container',
+            dockerId: 'docker-hybrid',
+            image: 'alpine:latest',
+            status: 'running',
+            createdAt: new Date('2025-01-23T10:00:00Z'),
+            lastActivity: new Date('2025-01-23T10:00:00Z'),
+            connection: { host: 'localhost', port: 8003 },
+            environment: {},
+            metadata: {},
+            cleanupStrategy: { type: 'hybrid', activityTimeout: 600, maxLifetime: 1200 } // 10 min activity, 20 min lifetime
+          }
+        ];
+
+        mockContainerManager.listContainers.mockResolvedValue(containers);
+        mockContainerManager.getContainer.mockImplementation((id: string) => 
+          containers.find(c => c.id === id) || null
+        );
+        mockContainerManager.removeContainer.mockResolvedValue(undefined);
+
+        // Set time to 10 minutes after creation
+        vi.setSystemTime(new Date('2025-01-23T10:10:00Z'));
+        
+        // Mock activity times
+        mockActivityMonitor.getLastActivity
+          .mockReturnValueOnce(new Date('2025-01-23T10:04:00Z')) // activity-container: 6 min ago (should be removed)
+          .mockReturnValueOnce(new Date('2025-01-23T10:09:00Z')) // lifetime-container: 1 min ago but 10 min old (should be removed)
+          .mockReturnValueOnce(new Date('2025-01-23T10:08:00Z')); // hybrid-container: 2 min ago and 10 min old (should not be removed)
+
+        const result = await cleanupScheduler.performManualCleanup();
+        
+        expect(result.totalContainersChecked).toBe(3);
+        expect(result.containersRemoved).toBe(2);
+        expect(mockContainerManager.removeContainer).toHaveBeenCalledWith('activity-container');
+        expect(mockContainerManager.removeContainer).toHaveBeenCalledWith('lifetime-container');
+        expect(mockContainerManager.removeContainer).not.toHaveBeenCalledWith('hybrid-container');
+      });
+    });
+  });
+
   describe('error handling', () => {
     it('should handle errors during container listing', async () => {
       mockContainerManager.listContainers.mockRejectedValue(new Error('Docker connection failed'));
@@ -412,7 +839,8 @@ describe('CleanupScheduler', () => {
           lastActivity: new Date(),
           connection: { host: 'localhost', port: 8001 },
           environment: {},
-          metadata: {}
+          metadata: {},
+          cleanupStrategy: { type: 'activity', activityTimeout: 300 }
         }
       ];
 

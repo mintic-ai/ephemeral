@@ -2,7 +2,7 @@
 title: "Configuration Management Guide"
 description: "Comprehensive guide for managing configuration in the Ephemeral system, including environment variables, validation, and configuration patterns"
 audience: ["developers", "devops", "administrators"]
-last_updated: "2025-01-23"
+last_updated: "2025-01-25"
 version: "1.0.0"
 related_docs:
   - "../development/setup.md"
@@ -503,6 +503,133 @@ describe('Configuration Integration', () => {
   });
 });
 ```
+
+## Cleanup Strategy Configuration
+
+The Ephemeral system supports flexible cleanup strategies that can be configured per container. While these are not global configuration options, understanding how they work is important for system administrators.
+
+### Default Cleanup Behavior
+
+The system provides default cleanup behavior through global configuration:
+
+```bash
+# Global cleanup defaults (affects containers without explicit strategies)
+CLEANUP_INTERVAL=60                    # Check every 60 seconds
+CLEANUP_INACTIVITY_TIMEOUT=300         # Default activity timeout (5 minutes)
+CLEANUP_MAX_RETRY_ATTEMPTS=3           # Retry failed cleanups 3 times
+CLEANUP_FORCE_REMOVAL_TIMEOUT=30       # Force removal after 30 seconds
+```
+
+### Per-Container Cleanup Strategies
+
+Containers can override the default behavior by specifying cleanup strategies in their creation request:
+
+#### Activity-Based Cleanup (Default)
+```json
+{
+  "cleanupStrategy": {
+    "type": "activity",
+    "activityTimeout": 600
+  }
+}
+```
+
+#### Lifetime-Based Cleanup
+```json
+{
+  "cleanupStrategy": {
+    "type": "lifetime",
+    "maxLifetime": 3600
+  }
+}
+```
+
+#### Hybrid Cleanup (Activity OR Lifetime)
+```json
+{
+  "cleanupStrategy": {
+    "type": "hybrid",
+    "activityTimeout": 300,
+    "maxLifetime": 1800
+  }
+}
+```
+
+#### Custom Activity Thresholds
+```json
+{
+  "cleanupStrategy": {
+    "type": "activity",
+    "activityTimeout": 300,
+    "activityThresholds": {
+      "minCpuPercent": 5.0,
+      "minMemoryMB": 100,
+      "minNetworkBytesPerSec": 1024
+    }
+  }
+}
+```
+
+### Activity Monitoring Configuration
+
+The system monitors container activity using Docker stats API. This monitoring can impact system performance:
+
+```bash
+# Activity monitoring is always enabled but can be tuned
+# These are internal constants that may become configurable in future versions:
+# - Stats monitoring interval: 30 seconds
+# - Default CPU activity threshold: 1% CPU usage
+# - Default network activity detection: Any network I/O
+```
+
+### Cleanup Strategy Validation
+
+The system validates cleanup strategy parameters:
+
+- **Strategy Type**: Must be 'activity', 'lifetime', or 'hybrid'
+- **Activity Timeout**: Must be positive number (seconds)
+- **Max Lifetime**: Must be positive number (seconds)
+- **CPU Threshold**: Must be 0-100 (percentage)
+- **Memory Threshold**: Must be positive number (MB)
+- **Network Threshold**: Must be positive number (bytes/sec)
+
+### Configuration Impact on Cleanup Strategies
+
+Global configuration affects cleanup strategy behavior:
+
+| Global Setting | Impact on Cleanup Strategies |
+|----------------|-------------------------------|
+| `CLEANUP_INTERVAL` | How often cleanup evaluation runs for all strategies |
+| `CLEANUP_INACTIVITY_TIMEOUT` | Default timeout for containers without explicit `activityTimeout` |
+| `CLEANUP_MAX_RETRY_ATTEMPTS` | Retry attempts for failed cleanup operations |
+| `CLEANUP_FORCE_REMOVAL_TIMEOUT` | Force removal timeout for all cleanup operations |
+
+### Best Practices for Cleanup Configuration
+
+1. **Development Environment**: Use short timeouts for quick resource cleanup
+   ```bash
+   CLEANUP_INTERVAL=30
+   CLEANUP_INACTIVITY_TIMEOUT=120
+   ```
+
+2. **Production Environment**: Use conservative timeouts to avoid premature cleanup
+   ```bash
+   CLEANUP_INTERVAL=300
+   CLEANUP_INACTIVITY_TIMEOUT=1800
+   ```
+
+3. **Testing Environment**: Use very short timeouts for fast test execution
+   ```bash
+   CLEANUP_INTERVAL=10
+   CLEANUP_INACTIVITY_TIMEOUT=30
+   ```
+
+4. **Resource-Constrained Environments**: Use aggressive cleanup settings
+   ```bash
+   CLEANUP_INTERVAL=60
+   CLEANUP_INACTIVITY_TIMEOUT=300
+   CLEANUP_MAX_RETRY_ATTEMPTS=2
+   ```
 
 ## Configuration Best Practices
 

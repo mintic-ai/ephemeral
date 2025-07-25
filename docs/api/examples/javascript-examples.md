@@ -2,7 +2,7 @@
 title: "JavaScript API Examples"
 description: "Node.js and browser JavaScript examples for API integration"
 audience: ["developers", "frontend-developers", "nodejs-developers"]
-last_updated: "2025-01-23"
+last_updated: "2025-01-25"
 version: "1.0.0"
 related_docs:
   - "../endpoints.md"
@@ -209,7 +209,12 @@ createContainer({
     PORT: '3000',
     DEBUG: 'true'
   },
-  ports: [3000, 3001]
+  ports: [3000, 3001],
+  cleanupStrategy: {
+    type: 'hybrid',
+    maxLifetime: 3600,
+    activityTimeout: 300
+  }
 });
 ```
 
@@ -244,6 +249,31 @@ class ContainerBuilder {
     return this;
   }
 
+  cleanupStrategy(type, options = {}) {
+    this.config.cleanupStrategy = { type, ...options };
+    return this;
+  }
+
+  activityCleanup(timeoutSeconds) {
+    return this.cleanupStrategy('activity', { activityTimeout: timeoutSeconds });
+  }
+
+  lifetimeCleanup(maxLifetimeSeconds) {
+    return this.cleanupStrategy('lifetime', { maxLifetime: maxLifetimeSeconds });
+  }
+
+  hybridCleanup(activityTimeout, maxLifetime) {
+    return this.cleanupStrategy('hybrid', { activityTimeout, maxLifetime });
+  }
+
+  activityThresholds(thresholds) {
+    if (!this.config.cleanupStrategy) {
+      this.config.cleanupStrategy = { type: 'activity' };
+    }
+    this.config.cleanupStrategy.activityThresholds = thresholds;
+    return this;
+  }
+
   async create(client) {
     const response = await client.request('/containers', {
       method: 'POST',
@@ -253,17 +283,47 @@ class ContainerBuilder {
   }
 }
 
-// Usage
+// Usage examples
 const client = new DockerOnDemandClient();
 
-const container = await new ContainerBuilder()
+// Basic container with default cleanup
+const basicContainer = await new ContainerBuilder()
   .image('nginx:alpine')
   .env('NGINX_HOST', 'localhost')
   .env('NGINX_PORT', '80')
   .ports(80, 443)
   .create(client);
 
-console.log('Created container:', container.id);
+// Container with activity-based cleanup
+const activityContainer = await new ContainerBuilder()
+  .image('nginx:alpine')
+  .activityCleanup(600) // 10 minutes
+  .create(client);
+
+// Container with lifetime-based cleanup
+const lifetimeContainer = await new ContainerBuilder()
+  .image('nginx:alpine')
+  .lifetimeCleanup(3600) // 1 hour max lifetime
+  .create(client);
+
+// Container with hybrid cleanup strategy
+const hybridContainer = await new ContainerBuilder()
+  .image('nginx:alpine')
+  .hybridCleanup(300, 1800) // 5 min activity timeout, 30 min max lifetime
+  .create(client);
+
+// Container with custom activity thresholds
+const customThresholdContainer = await new ContainerBuilder()
+  .image('nginx:alpine')
+  .activityCleanup(300)
+  .activityThresholds({
+    minCpuPercent: 10.0,
+    minMemoryMB: 100,
+    minNetworkBytesPerSec: 2048
+  })
+  .create(client);
+
+console.log('Created containers with different cleanup strategies');
 ```
 
 ### List Containers
@@ -355,6 +415,284 @@ async function deleteContainer(containerId, confirm = false) {
 
 // Usage
 deleteContainer('container_1706012345678_abc123', true);
+```
+
+---
+
+## Cleanup Strategy Examples
+
+### Working with Different Cleanup Strategies
+
+```javascript
+// Helper function to create containers with different cleanup strategies
+async function createContainerWithCleanupStrategy(strategyConfig) {
+  const client = new DockerOnDemandClient();
+  
+  const containerConfig = {
+    image: 'nginx:alpine',
+    environment: {
+      STRATEGY_TYPE: strategyConfig.type
+    },
+    cleanupStrategy: strategyConfig
+  };
+  
+  try {
+    const response = await client.request('/containers', {
+      method: 'POST',
+      body: JSON.stringify(containerConfig)
+    });
+    
+    console.log(`Created container with ${strategyConfig.type} cleanup strategy:`, response.data.id);
+    console.log('Cleanup configuration:', response.data.cleanup_strategy);
+    
+    return response.data;
+  } catch (error) {
+    console.error('Failed to create container:', error.message);
+    throw error;
+  }
+}
+
+// Activity-based cleanup (default behavior)
+const activityContainer = await createContainerWithCleanupStrategy({
+  type: 'activity',
+  activityTimeout: 600 // 10 minutes
+});
+
+// Lifetime-based cleanup
+const lifetimeContainer = await createContainerWithCleanupStrategy({
+  type: 'lifetime',
+  maxLifetime: 3600 // 1 hour maximum
+});
+
+// Hybrid cleanup (whichever condition is met first)
+const hybridContainer = await createContainerWithCleanupStrategy({
+  type: 'hybrid',
+  activityTimeout: 300, // 5 minutes inactivity
+  maxLifetime: 1800     // 30 minutes maximum
+});
+
+// Activity-based with custom thresholds
+const customThresholdContainer = await createContainerWithCleanupStrategy({
+  type: 'activity',
+  activityTimeout: 300,
+  activityThresholds: {
+    minCpuPercent: 5.0,        // 5% CPU minimum
+    minMemoryMB: 100,          // 100MB memory minimum
+    minNetworkBytesPerSec: 1024 // 1KB/s network minimum
+  }
+});
+```
+
+### Cleanup Strategy Validation
+
+```javascript
+// Function to validate cleanup strategy before sending
+function validateCleanupStrategy(strategy) {
+  const errors = [];
+  
+  // Validate strategy type
+  if (!['activity', 'lifetime', 'hybrid'].includes(strategy.type)) {
+    errors.push('Strategy type must be one of: activity, lifetime, hybrid');
+  }
+  
+  // Validate maxLifetime
+  if (strategy.maxLifetime !== undefined) {
+    if (typeof strategy.maxLifetime !== 'number' || strategy.maxLifetime <= 0) {
+      errors.push('maxLifetime must be a positive number');
+    }
+  }
+  
+  // Validate activityTimeout
+  if (strategy.activityTimeout !== undefined) {
+    if (typeof strategy.activityTimeout !== 'number' || strategy.activityTimeout <= 0) {
+      errors.push('activityTimeout must be a positive number');
+    }
+  }
+  
+  // Validate activity thresholds
+  if (strategy.activityThresholds) {
+    const thresholds = strategy.activityThresholds;
+    
+    if (thresholds.minCpuPercent !== undefined) {
+      if (typeof thresholds.minCpuPercent !== 'number' || 
+          thresholds.minCpuPercent < 0 || thresholds.minCpuPercent > 100) {
+        errors.push('minCpuPercent must be a number between 0 and 100');
+      }
+    }
+    
+    if (thresholds.minMemoryMB !== undefined) {
+      if (typeof thresholds.minMemoryMB !== 'number' || thresholds.minMemoryMB < 0) {
+        errors.push('minMemoryMB must be a positive number');
+      }
+    }
+    
+    if (thresholds.minNetworkBytesPerSec !== undefined) {
+      if (typeof thresholds.minNetworkBytesPerSec !== 'number' || 
+          thresholds.minNetworkBytesPerSec < 0) {
+        errors.push('minNetworkBytesPerSec must be a positive number');
+      }
+    }
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+// Usage example with validation
+async function createValidatedContainer(config) {
+  const client = new DockerOnDemandClient();
+  
+  // Validate cleanup strategy if provided
+  if (config.cleanupStrategy) {
+    const validation = validateCleanupStrategy(config.cleanupStrategy);
+    if (!validation.isValid) {
+      throw new Error(`Invalid cleanup strategy: ${validation.errors.join(', ')}`);
+    }
+  }
+  
+  try {
+    const response = await client.request('/containers', {
+      method: 'POST',
+      body: JSON.stringify(config)
+    });
+    
+    return response.data;
+  } catch (error) {
+    // Handle API validation errors
+    if (error.message.includes('Invalid cleanup strategy')) {
+      console.error('Server validation failed:', error.message);
+    }
+    throw error;
+  }
+}
+```
+
+### Monitoring Container Cleanup
+
+```javascript
+class CleanupMonitor {
+  constructor(client) {
+    this.client = client;
+    this.monitoredContainers = new Map();
+  }
+  
+  // Track a container and its expected cleanup time
+  trackContainer(container) {
+    const strategy = container.cleanup_strategy;
+    const createdAt = new Date(container.created_at);
+    const now = new Date();
+    
+    let expectedCleanupTime;
+    
+    switch (strategy.type) {
+      case 'activity':
+        // Cleanup after activity timeout from last activity
+        expectedCleanupTime = new Date(now.getTime() + (strategy.activity_timeout * 1000));
+        break;
+        
+      case 'lifetime':
+        // Cleanup after max lifetime from creation
+        expectedCleanupTime = new Date(createdAt.getTime() + (strategy.max_lifetime * 1000));
+        break;
+        
+      case 'hybrid':
+        // Cleanup at whichever comes first
+        const activityCleanup = new Date(now.getTime() + (strategy.activity_timeout * 1000));
+        const lifetimeCleanup = new Date(createdAt.getTime() + (strategy.max_lifetime * 1000));
+        expectedCleanupTime = activityCleanup < lifetimeCleanup ? activityCleanup : lifetimeCleanup;
+        break;
+    }
+    
+    this.monitoredContainers.set(container.id, {
+      container,
+      expectedCleanupTime,
+      strategy: strategy.type
+    });
+    
+    console.log(`Tracking container ${container.id} - expected cleanup: ${expectedCleanupTime.toLocaleString()}`);
+  }
+  
+  // Check which containers should be cleaned up by now
+  async checkExpectedCleanups() {
+    const now = new Date();
+    const results = [];
+    
+    for (const [containerId, info] of this.monitoredContainers) {
+      if (now > info.expectedCleanupTime) {
+        try {
+          // Check if container still exists
+          await this.client.request(`/containers/${containerId}`);
+          
+          // Container still exists past expected cleanup time
+          results.push({
+            containerId,
+            status: 'overdue',
+            expectedCleanupTime: info.expectedCleanupTime,
+            strategy: info.strategy
+          });
+        } catch (error) {
+          if (error.message.includes('CONTAINER_NOT_FOUND')) {
+            // Container was cleaned up as expected
+            results.push({
+              containerId,
+              status: 'cleaned_up',
+              expectedCleanupTime: info.expectedCleanupTime,
+              strategy: info.strategy
+            });
+            
+            // Remove from monitoring
+            this.monitoredContainers.delete(containerId);
+          }
+        }
+      } else {
+        results.push({
+          containerId,
+          status: 'pending',
+          expectedCleanupTime: info.expectedCleanupTime,
+          strategy: info.strategy
+        });
+      }
+    }
+    
+    return results;
+  }
+  
+  // Get summary of cleanup monitoring
+  getMonitoringSummary() {
+    const summary = {
+      total: this.monitoredContainers.size,
+      byStrategy: { activity: 0, lifetime: 0, hybrid: 0 }
+    };
+    
+    for (const info of this.monitoredContainers.values()) {
+      summary.byStrategy[info.strategy]++;
+    }
+    
+    return summary;
+  }
+}
+
+// Usage example
+const client = new DockerOnDemandClient();
+const monitor = new CleanupMonitor(client);
+
+// Create and track containers
+const containers = await Promise.all([
+  createContainerWithCleanupStrategy({ type: 'activity', activityTimeout: 300 }),
+  createContainerWithCleanupStrategy({ type: 'lifetime', maxLifetime: 600 }),
+  createContainerWithCleanupStrategy({ type: 'hybrid', activityTimeout: 300, maxLifetime: 600 })
+]);
+
+containers.forEach(container => monitor.trackContainer(container));
+
+// Check cleanup status periodically
+setInterval(async () => {
+  const results = await monitor.checkExpectedCleanups();
+  console.log('Cleanup status:', results);
+  console.log('Monitoring summary:', monitor.getMonitoringSummary());
+}, 30000); // Check every 30 seconds
 ```
 
 ---

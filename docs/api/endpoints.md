@@ -2,7 +2,7 @@
 title: "API Endpoints Reference"
 description: "Complete documentation of all API endpoints with request/response schemas"
 audience: ["developers", "api-consumers"]
-last_updated: "2025-01-23"
+last_updated: "2025-01-25"
 version: "1.0.0"
 related_docs:
   - "README.md"
@@ -116,17 +116,35 @@ Create a new container with the specified configuration.
     "ENV_VAR": "value",
     "ANOTHER_VAR": "another_value"
   },
-  "ports": [80, 443]
+  "ports": [80, 443],
+  "cleanupStrategy": {
+    "type": "hybrid",
+    "maxLifetime": 3600,
+    "activityTimeout": 300,
+    "activityThresholds": {
+      "minCpuPercent": 5.0,
+      "minMemoryMB": 50,
+      "minNetworkBytesPerSec": 1024
+    }
+  }
 }
 ```
 
 #### Request Fields
 
-| Field         | Type   | Required | Description                                                      |
-| ------------- | ------ | -------- | ---------------------------------------------------------------- |
-| `image`       | string | No       | Docker image to use (defaults to system default if not provided) |
-| `environment` | object | No       | Environment variables as key-value pairs                         |
-| `ports`       | array  | No       | Array of port numbers to expose (currently not implemented)      |
+| Field                                              | Type   | Required | Description                                                      |
+| -------------------------------------------------- | ------ | -------- | ---------------------------------------------------------------- |
+| `image`                                            | string | No       | Docker image to use (defaults to system default if not provided) |
+| `environment`                                      | object | No       | Environment variables as key-value pairs                         |
+| `ports`                                            | array  | No       | Array of port numbers to expose (currently not implemented)      |
+| `cleanupStrategy`                                  | object | No       | Container cleanup strategy configuration                          |
+| `cleanupStrategy.type`                             | string | No       | Cleanup strategy type: "activity", "lifetime", or "hybrid"       |
+| `cleanupStrategy.maxLifetime`                      | number | No       | Maximum container lifetime in seconds (for lifetime/hybrid)      |
+| `cleanupStrategy.activityTimeout`                  | number | No       | Inactivity timeout in seconds (for activity/hybrid)             |
+| `cleanupStrategy.activityThresholds`               | object | No       | Custom activity detection thresholds                             |
+| `cleanupStrategy.activityThresholds.minCpuPercent` | number | No       | Minimum CPU usage percentage to consider active (0-100)         |
+| `cleanupStrategy.activityThresholds.minMemoryMB`   | number | No       | Minimum memory usage in MB to consider active                   |
+| `cleanupStrategy.activityThresholds.minNetworkBytesPerSec` | number | No | Minimum network I/O bytes/sec to consider active               |
 
 #### Response
 
@@ -149,6 +167,16 @@ Create a new container with the specified configuration.
     "environment": {
       "ENV_VAR": "value",
       "ANOTHER_VAR": "another_value"
+    },
+    "cleanup_strategy": {
+      "type": "hybrid",
+      "max_lifetime": 3600,
+      "activity_timeout": 300,
+      "activity_thresholds": {
+        "min_cpu_percent": 5.0,
+        "min_memory_mb": 50,
+        "min_network_bytes_per_sec": 1024
+      }
     }
   }
 }
@@ -156,17 +184,25 @@ Create a new container with the specified configuration.
 
 #### Response Fields
 
-| Field             | Type   | Description                                                              |
-| ----------------- | ------ | ------------------------------------------------------------------------ |
-| `id`              | string | Unique container identifier                                              |
-| `status`          | string | Container status ("creating", "running", "stopping", "stopped", "error") |
-| `connection.host` | string | Host where container is accessible                                       |
-| `connection.port` | number | Port where container is accessible                                       |
-| `connection.url`  | string | Full URL to access the container                                         |
-| `created_at`      | string | ISO 8601 timestamp when container was created                            |
-| `last_activity`   | string | ISO 8601 timestamp of last activity                                      |
-| `image`           | string | Docker image used                                                        |
-| `environment`     | object | Environment variables set in the container                               |
+| Field                                                    | Type   | Description                                                              |
+| -------------------------------------------------------- | ------ | ------------------------------------------------------------------------ |
+| `id`                                                     | string | Unique container identifier                                              |
+| `status`                                                 | string | Container status ("creating", "running", "stopping", "stopped", "error") |
+| `connection.host`                                        | string | Host where container is accessible                                       |
+| `connection.port`                                        | number | Port where container is accessible                                       |
+| `connection.url`                                         | string | Full URL to access the container                                         |
+| `created_at`                                             | string | ISO 8601 timestamp when container was created                            |
+| `last_activity`                                          | string | ISO 8601 timestamp of last activity                                      |
+| `image`                                                  | string | Docker image used                                                        |
+| `environment`                                            | object | Environment variables set in the container                               |
+| `cleanup_strategy`                                       | object | Container cleanup strategy configuration                                  |
+| `cleanup_strategy.type`                                  | string | Cleanup strategy type ("activity", "lifetime", or "hybrid")             |
+| `cleanup_strategy.max_lifetime`                          | number | Maximum container lifetime in seconds (null if not set)                 |
+| `cleanup_strategy.activity_timeout`                      | number | Inactivity timeout in seconds (null if not set)                         |
+| `cleanup_strategy.activity_thresholds`                   | object | Custom activity detection thresholds (null if not set)                  |
+| `cleanup_strategy.activity_thresholds.min_cpu_percent`   | number | Minimum CPU usage percentage to consider active                          |
+| `cleanup_strategy.activity_thresholds.min_memory_mb`     | number | Minimum memory usage in MB to consider active                           |
+| `cleanup_strategy.activity_thresholds.min_network_bytes_per_sec` | number | Minimum network I/O bytes/sec to consider active                        |
 
 #### Error Responses
 
@@ -207,6 +243,12 @@ No parameters required.
       "image": "nginx:alpine",
       "environment": {
         "ENV_VAR": "value"
+      },
+      "cleanup_strategy": {
+        "type": "activity",
+        "max_lifetime": null,
+        "activity_timeout": 300,
+        "activity_thresholds": null
       }
     },
     {
@@ -220,7 +262,13 @@ No parameters required.
       "created_at": "2025-01-23T10:32:00.000Z",
       "last_activity": "2025-01-23T10:36:00.000Z",
       "image": "node:18-alpine",
-      "environment": {}
+      "environment": {},
+      "cleanup_strategy": {
+        "type": "lifetime",
+        "max_lifetime": 1800,
+        "activity_timeout": null,
+        "activity_thresholds": null
+      }
     }
   ]
 }
@@ -271,6 +319,16 @@ Get detailed information about a specific container.
     "environment": {
       "ENV_VAR": "value",
       "ANOTHER_VAR": "another_value"
+    },
+    "cleanup_strategy": {
+      "type": "hybrid",
+      "max_lifetime": 3600,
+      "activity_timeout": 300,
+      "activity_thresholds": {
+        "min_cpu_percent": 5.0,
+        "min_memory_mb": 50,
+        "min_network_bytes_per_sec": 1024
+      }
     },
     "metadata": {
       "dockerId": "a1b2c3d4e5f6",

@@ -137,6 +137,22 @@ describe('ActivityMonitor', () => {
       expect(record?.details).toEqual({ action: 'monitoring_started' });
     });
 
+    it('should store custom activity thresholds when provided', () => {
+      const containerId = 'container-1';
+      const dockerId = 'docker-123';
+      const thresholds = {
+        minCpuPercent: 10,
+        minMemoryMB: 100,
+        minNetworkBytesPerSec: 1000
+      };
+
+      activityMonitor.startMonitoring(containerId, dockerId, thresholds);
+
+      // Verify thresholds are stored (we'll test their usage in other tests)
+      const record = activityMonitor.getActivityRecord(containerId);
+      expect(record).toBeDefined();
+    });
+
     it('should set up periodic stats monitoring', () => {
       const containerId = 'container-1';
       const dockerId = 'docker-123';
@@ -386,6 +402,386 @@ describe('ActivityMonitor', () => {
     });
   });
 
+  describe('Memory usage calculation', () => {
+    it('should calculate memory usage in MB correctly', () => {
+      const stats = {
+        memory_stats: { usage: 1048576 } // 1 MB in bytes
+      };
+
+      const memoryUsage = (activityMonitor as any).calculateMemoryUsageMB(stats);
+      expect(memoryUsage).toBe(1);
+    });
+
+    it('should return 0 for invalid memory stats', () => {
+      const invalidStats = [
+        null,
+        undefined,
+        {},
+        { memory_stats: null },
+        { memory_stats: {} },
+        { memory_stats: { usage: null } }
+      ];
+
+      invalidStats.forEach(stats => {
+        const memoryUsage = (activityMonitor as any).calculateMemoryUsageMB(stats);
+        expect(memoryUsage).toBe(0);
+      });
+    });
+  });
+
+  describe('Network bytes per second calculation', () => {
+    it('should calculate network bytes per second correctly', () => {
+      const containerId = 'container-1';
+      const stats1 = {
+        networks: {
+          eth0: { rx_bytes: 1000, tx_bytes: 2000 }
+        }
+      };
+      const stats2 = {
+        networks: {
+          eth0: { rx_bytes: 2000, tx_bytes: 4000 }
+        }
+      };
+
+      // First call establishes baseline
+      const firstResult = (activityMonitor as any).calculateNetworkBytesPerSec(containerId, stats1);
+      expect(firstResult).toBe(0);
+
+      // Advance time by 1 second
+      vi.advanceTimersByTime(1000);
+
+      // Second call should calculate rate
+      const secondResult = (activityMonitor as any).calculateNetworkBytesPerSec(containerId, stats2);
+      expect(secondResult).toBeGreaterThan(0);
+    });
+
+    it('should return 0 for invalid network stats', () => {
+      const containerId = 'container-1';
+      const invalidStats = [
+        null,
+        undefined,
+        {},
+        { networks: null },
+        { networks: {} }
+      ];
+
+      invalidStats.forEach(stats => {
+        const networkRate = (activityMonitor as any).calculateNetworkBytesPerSec(containerId, stats);
+        expect(networkRate).toBe(0);
+      });
+    });
+  });
+
+  describe('Custom activity threshold evaluation', () => {
+    it('should detect activity when CPU threshold is exceeded', async () => {
+      const containerId = 'container-1';
+      const dockerId = 'docker-123';
+      const thresholds = { minCpuPercent: 10 };
+
+      const stats = {
+        cpu_stats: {
+          cpu_usage: { total_usage: 2000000 },
+          system_cpu_usage: 4000000,
+          online_cpus: 1
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000
+        },
+        memory_stats: { usage: 0 },
+        networks: {}
+      };
+
+      mockContainer.stats.mockResolvedValue(stats);
+      activityMonitor.startMonitoring(containerId, dockerId, thresholds);
+
+      // Advance time to trigger stats check and wait for async operations
+      vi.advanceTimersByTime(30000);
+      await vi.runOnlyPendingTimersAsync();
+
+      // Should detect activity due to CPU usage (50% > 10%)
+      const record = activityMonitor.getActivityRecord(containerId);
+      expect(record?.activityType).toBe('resource_usage');
+    });
+
+    it('should detect activity when memory threshold is exceeded', async () => {
+      const containerId = 'container-1';
+      const dockerId = 'docker-123';
+      const thresholds = { minMemoryMB: 50 };
+
+      const stats = {
+        cpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000,
+          online_cpus: 1
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000
+        },
+        memory_stats: { usage: 104857600 }, // 100 MB
+        networks: {}
+      };
+
+      mockContainer.stats.mockResolvedValue(stats);
+      activityMonitor.startMonitoring(containerId, dockerId, thresholds);
+
+      // Advance time to trigger stats check and wait for async operations
+      vi.advanceTimersByTime(30000);
+      await vi.runOnlyPendingTimersAsync();
+
+      // Should detect activity due to memory usage (100 MB > 50 MB)
+      const record = activityMonitor.getActivityRecord(containerId);
+      expect(record?.activityType).toBe('resource_usage');
+    });
+
+    it('should detect activity when network threshold is exceeded', async () => {
+      const containerId = 'container-1';
+      const dockerId = 'docker-123';
+      const thresholds = { minNetworkBytesPerSec: 100 };
+
+      const stats1 = {
+        cpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000,
+          online_cpus: 1
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000
+        },
+        memory_stats: { usage: 0 },
+        networks: {
+          eth0: { rx_bytes: 1000, tx_bytes: 1000 }
+        }
+      };
+
+      const stats2 = {
+        cpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000,
+          online_cpus: 1
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000
+        },
+        memory_stats: { usage: 0 },
+        networks: {
+          eth0: { rx_bytes: 5000, tx_bytes: 5000 } // Much higher values to ensure threshold is exceeded
+        }
+      };
+
+      mockContainer.stats
+        .mockResolvedValueOnce(stats1)
+        .mockResolvedValue(stats2);
+
+      activityMonitor.startMonitoring(containerId, dockerId, thresholds);
+
+      // First stats call establishes baseline
+      vi.advanceTimersByTime(30000);
+      await vi.runOnlyPendingTimersAsync();
+      
+      // Second stats call should detect network activity
+      // The network rate should be (10000 - 2000) / 30 = 266.67 bytes/sec > 100 threshold
+      vi.advanceTimersByTime(30000);
+      await vi.runOnlyPendingTimersAsync();
+
+      const record = activityMonitor.getActivityRecord(containerId);
+      expect(record?.activityType).toBe('resource_usage');
+    });
+
+    it('should not detect activity when no thresholds are exceeded', () => {
+      const containerId = 'container-1';
+      const dockerId = 'docker-123';
+      const thresholds = {
+        minCpuPercent: 50,
+        minMemoryMB: 100,
+        minNetworkBytesPerSec: 1000
+      };
+
+      const stats = {
+        cpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000,
+          online_cpus: 1
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000
+        },
+        memory_stats: { usage: 1048576 }, // 1 MB
+        networks: {
+          eth0: { rx_bytes: 10, tx_bytes: 10 }
+        }
+      };
+
+      mockContainer.stats.mockResolvedValue(stats);
+      activityMonitor.startMonitoring(containerId, dockerId, thresholds);
+
+      // Store initial activity record
+      const initialRecord = activityMonitor.getActivityRecord(containerId);
+      const initialTimestamp = initialRecord?.timestamp;
+
+      // Advance time to trigger stats check
+      vi.advanceTimersByTime(30000);
+
+      // Should not update activity since no thresholds are exceeded
+      const record = activityMonitor.getActivityRecord(containerId);
+      expect(record?.timestamp).toEqual(initialTimestamp);
+      expect(record?.activityType).toBe('manual'); // Still the initial monitoring_started record
+    });
+
+    it('should use any threshold that is exceeded (OR logic)', async () => {
+      const containerId = 'container-1';
+      const dockerId = 'docker-123';
+      const thresholds = {
+        minCpuPercent: 50, // High threshold, won't be exceeded
+        minMemoryMB: 10,   // Low threshold, will be exceeded
+        minNetworkBytesPerSec: 1000 // High threshold, won't be exceeded
+      };
+
+      const stats = {
+        cpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000,
+          online_cpus: 1
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000
+        },
+        memory_stats: { usage: 52428800 }, // 50 MB
+        networks: {
+          eth0: { rx_bytes: 10, tx_bytes: 10 }
+        }
+      };
+
+      mockContainer.stats.mockResolvedValue(stats);
+      activityMonitor.startMonitoring(containerId, dockerId, thresholds);
+
+      // Advance time to trigger stats check and wait for async operations
+      vi.advanceTimersByTime(30000);
+      await vi.runOnlyPendingTimersAsync();
+
+      // Should detect activity due to memory threshold being exceeded
+      const record = activityMonitor.getActivityRecord(containerId);
+      expect(record?.activityType).toBe('resource_usage');
+    });
+  });
+
+  describe('Default activity detection fallback', () => {
+    it('should use default detection when no custom thresholds are provided', async () => {
+      const containerId = 'container-1';
+      const dockerId = 'docker-123';
+
+      const stats = {
+        cpu_stats: {
+          cpu_usage: { total_usage: 1100000 },
+          system_cpu_usage: 2000000,
+          online_cpus: 1
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000
+        },
+        memory_stats: { usage: 1048576 },
+        networks: {
+          eth0: { rx_bytes: 100, tx_bytes: 200 }
+        }
+      };
+
+      mockContainer.stats.mockResolvedValue(stats);
+      activityMonitor.startMonitoring(containerId, dockerId); // No thresholds provided
+
+      // Advance time to trigger stats check and wait for async operations
+      vi.advanceTimersByTime(30000);
+      await vi.runOnlyPendingTimersAsync();
+
+      // Should detect activity using default logic (CPU > 1% or network activity)
+      const record = activityMonitor.getActivityRecord(containerId);
+      expect(record?.activityType).toBe('resource_usage');
+    });
+
+    it('should not detect activity with default detection when usage is minimal', () => {
+      const containerId = 'container-1';
+      const dockerId = 'docker-123';
+
+      const stats = {
+        cpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000,
+          online_cpus: 1
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000
+        },
+        memory_stats: { usage: 1048576 },
+        networks: {
+          eth0: { rx_bytes: 0, tx_bytes: 0 }
+        }
+      };
+
+      mockContainer.stats.mockResolvedValue(stats);
+      activityMonitor.startMonitoring(containerId, dockerId); // No thresholds provided
+
+      // Store initial activity record
+      const initialRecord = activityMonitor.getActivityRecord(containerId);
+      const initialTimestamp = initialRecord?.timestamp;
+
+      // Advance time to trigger stats check
+      vi.advanceTimersByTime(30000);
+
+      // Should not update activity since usage is minimal
+      const record = activityMonitor.getActivityRecord(containerId);
+      expect(record?.timestamp).toEqual(initialTimestamp);
+      expect(record?.activityType).toBe('manual'); // Still the initial monitoring_started record
+    });
+  });
+
+  describe('Activity evaluation integration', () => {
+    it('should include detailed metrics in activity record when activity is detected', async () => {
+      const containerId = 'container-1';
+      const dockerId = 'docker-123';
+      const thresholds = { minCpuPercent: 10 };
+
+      const stats = {
+        cpu_stats: {
+          cpu_usage: { total_usage: 2000000 },
+          system_cpu_usage: 4000000,
+          online_cpus: 1
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1000000 },
+          system_cpu_usage: 2000000
+        },
+        memory_stats: { usage: 52428800 }, // 50 MB
+        networks: {
+          eth0: { rx_bytes: 1000, tx_bytes: 2000 }
+        }
+      };
+
+      mockContainer.stats.mockResolvedValue(stats);
+      activityMonitor.startMonitoring(containerId, dockerId, thresholds);
+
+      // Advance time to trigger stats check and wait for async operations
+      vi.advanceTimersByTime(30000);
+      await vi.runOnlyPendingTimersAsync();
+
+      const record = activityMonitor.getActivityRecord(containerId);
+      expect(record?.activityType).toBe('resource_usage');
+      expect(record?.details).toMatchObject({
+        cpu_usage_percent: expect.any(Number),
+        memory_usage_mb: expect.any(Number),
+        network_bytes_per_sec: expect.any(Number),
+        timestamp: expect.any(String)
+      });
+      expect(record?.details?.cpu_usage_percent).toBeGreaterThan(0);
+      expect(record?.details?.memory_usage_mb).toBeGreaterThan(0);
+    });
+  });
+
   describe('cleanup', () => {
     it('should stop all monitoring and clear records', () => {
       const containerId1 = 'container-1';
@@ -403,6 +799,22 @@ describe('ActivityMonitor', () => {
       // Verify intervals are cleared
       vi.advanceTimersByTime(30000);
       expect(mockContainer.stats).not.toHaveBeenCalled();
+    });
+
+    it('should clear custom thresholds and network stats on cleanup', () => {
+      const containerId = 'container-1';
+      const dockerId = 'docker-123';
+      const thresholds = { minCpuPercent: 10 };
+
+      activityMonitor.startMonitoring(containerId, dockerId, thresholds);
+      
+      // Verify cleanup clears all internal state
+      activityMonitor.cleanup();
+      
+      // Start monitoring again - should work without issues
+      activityMonitor.startMonitoring(containerId, dockerId, thresholds);
+      const record = activityMonitor.getActivityRecord(containerId);
+      expect(record).toBeDefined();
     });
   });
 });

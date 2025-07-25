@@ -199,28 +199,152 @@ export class CleanupScheduler {
   }
 
   /**
-   * Check if a container should be removed based on inactivity
+   * Check if a container should be removed based on its cleanup strategy
    */
   private shouldRemoveContainer(containerId: string, lastActivity: Date | null, currentTime: Date): boolean {
-    if (!lastActivity) {
-      // No activity recorded, use container creation time or current time
-      this.logger.warn('CleanupScheduler', `No activity recorded for container ${containerId}, marking for removal`, {
+    // Get container to access its cleanup strategy
+    const container = this.containerManager.getContainer(containerId);
+    if (!container) {
+      this.logger.warn('CleanupScheduler', `Container ${containerId} not found, marking for removal`, {
         containerId
       });
       return true;
     }
 
-    const inactivityPeriod = currentTime.getTime() - lastActivity.getTime();
-    const timeoutMs = this.config.cleanup.inactivityTimeout * 1000;
-    
+    const strategy = container.cleanupStrategy;
+    const createdAt = container.createdAt;
+
+    // Calculate time periods
+    const lifetimePeriod = currentTime.getTime() - createdAt.getTime();
+    const inactivityPeriod = lastActivity ? currentTime.getTime() - lastActivity.getTime() : lifetimePeriod;
+
+    // Check cleanup conditions based on strategy type
+    switch (strategy.type) {
+      case 'activity':
+        return this.shouldRemoveByActivity(containerId, strategy, inactivityPeriod, lastActivity);
+      
+      case 'lifetime':
+        return this.shouldRemoveByLifetime(containerId, strategy, lifetimePeriod);
+      
+      case 'hybrid':
+        return this.shouldRemoveByHybrid(containerId, strategy, inactivityPeriod, lifetimePeriod, lastActivity);
+      
+      default:
+        this.logger.warn('CleanupScheduler', `Unknown cleanup strategy type for container ${containerId}: ${strategy.type}`, {
+          containerId,
+          strategyType: strategy.type
+        });
+        // Fall back to default activity-based cleanup
+        return this.shouldRemoveByActivity(containerId, strategy, inactivityPeriod, lastActivity);
+    }
+  }
+
+  /**
+   * Check if container should be removed based on activity timeout
+   */
+  private shouldRemoveByActivity(containerId: string, strategy: any, inactivityPeriod: number, lastActivity: Date | null): boolean {
+    if (!lastActivity) {
+      this.logger.warn('CleanupScheduler', `No activity recorded for container ${containerId}, marking for removal`, {
+        containerId,
+        strategy: 'activity'
+      });
+      return true;
+    }
+
+    // Use strategy-specific timeout or fall back to global config
+    const timeoutMs = (strategy.activityTimeout || this.config.cleanup.inactivityTimeout) * 1000;
     const shouldRemove = inactivityPeriod > timeoutMs;
     
     if (shouldRemove) {
-      this.logger.info('CleanupScheduler', `Container ${containerId} inactive for ${Math.round(inactivityPeriod / 1000)}s (timeout: ${this.config.cleanup.inactivityTimeout}s)`, {
+      this.logger.info('CleanupScheduler', `Container ${containerId} inactive for ${Math.round(inactivityPeriod / 1000)}s (activity timeout: ${Math.round(timeoutMs / 1000)}s)`, {
         containerId,
+        strategy: 'activity',
         inactivityPeriodMs: inactivityPeriod,
         inactivityPeriodSeconds: Math.round(inactivityPeriod / 1000),
-        timeoutSeconds: this.config.cleanup.inactivityTimeout
+        timeoutSeconds: Math.round(timeoutMs / 1000)
+      });
+    }
+    
+    return shouldRemove;
+  }
+
+  /**
+   * Check if container should be removed based on maximum lifetime
+   */
+  private shouldRemoveByLifetime(containerId: string, strategy: any, lifetimePeriod: number): boolean {
+    if (!strategy.maxLifetime) {
+      this.logger.warn('CleanupScheduler', `No maxLifetime configured for lifetime strategy container ${containerId}, marking for removal`, {
+        containerId,
+        strategy: 'lifetime'
+      });
+      return true;
+    }
+
+    const maxLifetimeMs = strategy.maxLifetime * 1000;
+    const shouldRemove = lifetimePeriod > maxLifetimeMs;
+    
+    if (shouldRemove) {
+      this.logger.info('CleanupScheduler', `Container ${containerId} exceeded maximum lifetime ${Math.round(lifetimePeriod / 1000)}s (max: ${strategy.maxLifetime}s)`, {
+        containerId,
+        strategy: 'lifetime',
+        lifetimePeriodMs: lifetimePeriod,
+        lifetimePeriodSeconds: Math.round(lifetimePeriod / 1000),
+        maxLifetimeSeconds: strategy.maxLifetime
+      });
+    }
+    
+    return shouldRemove;
+  }
+
+  /**
+   * Check if container should be removed based on hybrid strategy (activity OR lifetime)
+   */
+  private shouldRemoveByHybrid(containerId: string, strategy: any, inactivityPeriod: number, lifetimePeriod: number, lastActivity: Date | null): boolean {
+    let shouldRemoveByActivity = false;
+    let shouldRemoveByLifetime = false;
+    let removalReason = '';
+
+    // Check activity timeout if configured
+    if (strategy.activityTimeout) {
+      if (!lastActivity) {
+        shouldRemoveByActivity = true;
+        removalReason = 'no activity recorded';
+      } else {
+        const activityTimeoutMs = strategy.activityTimeout * 1000;
+        shouldRemoveByActivity = inactivityPeriod > activityTimeoutMs;
+        if (shouldRemoveByActivity) {
+          removalReason = `inactive for ${Math.round(inactivityPeriod / 1000)}s (activity timeout: ${strategy.activityTimeout}s)`;
+        }
+      }
+    }
+
+    // Check lifetime timeout if configured
+    if (strategy.maxLifetime) {
+      const maxLifetimeMs = strategy.maxLifetime * 1000;
+      shouldRemoveByLifetime = lifetimePeriod > maxLifetimeMs;
+      if (shouldRemoveByLifetime) {
+        if (removalReason) {
+          removalReason += ` and exceeded maximum lifetime ${Math.round(lifetimePeriod / 1000)}s (max: ${strategy.maxLifetime}s)`;
+        } else {
+          removalReason = `exceeded maximum lifetime ${Math.round(lifetimePeriod / 1000)}s (max: ${strategy.maxLifetime}s)`;
+        }
+      }
+    }
+
+    const shouldRemove = shouldRemoveByActivity || shouldRemoveByLifetime;
+    
+    if (shouldRemove) {
+      this.logger.info('CleanupScheduler', `Container ${containerId} ${removalReason}`, {
+        containerId,
+        strategy: 'hybrid',
+        inactivityPeriodMs: inactivityPeriod,
+        inactivityPeriodSeconds: Math.round(inactivityPeriod / 1000),
+        lifetimePeriodMs: lifetimePeriod,
+        lifetimePeriodSeconds: Math.round(lifetimePeriod / 1000),
+        activityTimeout: strategy.activityTimeout,
+        maxLifetime: strategy.maxLifetime,
+        removedByActivity: shouldRemoveByActivity,
+        removedByLifetime: shouldRemoveByLifetime
       });
     }
     

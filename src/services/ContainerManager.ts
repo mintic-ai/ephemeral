@@ -1,5 +1,5 @@
 import Docker from 'dockerode';
-import { Container, ContainerCreateRequest } from '../models/Container';
+import { Container, ContainerCreateRequest, normalizeCleanupStrategy, validateCleanupStrategy } from '../models/Container';
 import { ConfigManager } from './ConfigManager';
 import { SystemConfig } from '../models/SystemConfig';
 import { Logger } from '../utils/Logger';
@@ -39,10 +39,22 @@ export class ContainerManager {
     let allocatedPort: number | null = null;
 
     try {
+      // Validate and normalize cleanup strategy
+      let cleanupStrategy = normalizeCleanupStrategy(request.cleanupStrategy);
+      const validation = validateCleanupStrategy(cleanupStrategy);
+      
+      if (!validation.isValid) {
+        throw new ContainerManagerError(
+          `Invalid cleanup strategy: ${validation.errors.join(', ')}`,
+          'INVALID_CLEANUP_STRATEGY'
+        );
+      }
+
       this.logger.info('ContainerManager', `Starting container creation`, {
         containerId,
         image: request.image || this.config.docker.defaultImage,
-        environment: Object.keys(request.environment || {})
+        environment: Object.keys(request.environment || {}),
+        cleanupStrategy: cleanupStrategy
       });
 
       // Allocate port for the container
@@ -101,7 +113,8 @@ export class ContainerManager {
         metadata: {
           dockerName: containerConfig.name,
           networkMode: this.config.docker.networkMode
-        }
+        },
+        cleanupStrategy: cleanupStrategy
       };
 
       // Store container in our registry

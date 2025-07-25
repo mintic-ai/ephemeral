@@ -2,7 +2,7 @@
 title: "System Architecture Overview"
 description: "High-level architecture and design principles of the Ephemeral system"
 audience: ["developers", "architects", "technical-leads"]
-last_updated: "2025-01-23"
+last_updated: "2025-01-25"
 version: "1.0.0"
 related_docs:
   - "components.md"
@@ -142,17 +142,21 @@ graph TB
   - Container metadata management
 
 #### Activity Monitor
-- **Purpose**: Track container activity and usage patterns
+- **Purpose**: Track container activity and usage patterns with customizable thresholds
 - **Responsibilities**:
-  - Container activity detection
+  - Container activity detection with default and custom thresholds
+  - Resource usage monitoring (CPU, memory, network I/O)
   - Activity timestamp management
   - Usage pattern analysis
   - Activity record maintenance
+  - Custom threshold evaluation per container
 
 #### Cleanup Scheduler
-- **Purpose**: Automated cleanup of inactive containers
+- **Purpose**: Automated cleanup of inactive containers with flexible strategies
 - **Responsibilities**:
   - Periodic cleanup task execution
+  - Multi-strategy cleanup support (activity, lifetime, hybrid)
+  - Custom activity threshold evaluation
   - Inactivity detection and timeout management
   - Retry logic for failed cleanups
   - Cleanup history and reporting

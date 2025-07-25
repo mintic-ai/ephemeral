@@ -5,6 +5,7 @@ import { ConfigManager } from "../services/ConfigManager";
 import { SystemConfig } from "../models/SystemConfig";
 import { Logger } from "../utils/Logger";
 import { ErrorHandler } from "../utils/ErrorHandler";
+import { CleanupStrategy, validateCleanupStrategy, normalizeCleanupStrategy } from "../models/Container";
 import Docker from "dockerode";
 
 export interface ApiError {
@@ -436,6 +437,16 @@ export class ApiServer {
         last_activity: container.lastActivity.toISOString(),
         image: container.image,
         environment: container.environment,
+        cleanup_strategy: {
+          type: container.cleanupStrategy.type,
+          max_lifetime: container.cleanupStrategy.maxLifetime,
+          activity_timeout: container.cleanupStrategy.activityTimeout,
+          activity_thresholds: container.cleanupStrategy.activityThresholds ? {
+            min_cpu_percent: container.cleanupStrategy.activityThresholds.minCpuPercent,
+            min_memory_mb: container.cleanupStrategy.activityThresholds.minMemoryMB,
+            min_network_bytes_per_sec: container.cleanupStrategy.activityThresholds.minNetworkBytesPerSec,
+          } : undefined,
+        },
       };
 
       this.sendSuccessResponse(res, response, 201);
@@ -463,6 +474,16 @@ export class ApiServer {
         last_activity: container.lastActivity.toISOString(),
         image: container.image,
         environment: container.environment,
+        cleanup_strategy: {
+          type: container.cleanupStrategy.type,
+          max_lifetime: container.cleanupStrategy.maxLifetime,
+          activity_timeout: container.cleanupStrategy.activityTimeout,
+          activity_thresholds: container.cleanupStrategy.activityThresholds ? {
+            min_cpu_percent: container.cleanupStrategy.activityThresholds.minCpuPercent,
+            min_memory_mb: container.cleanupStrategy.activityThresholds.minMemoryMB,
+            min_network_bytes_per_sec: container.cleanupStrategy.activityThresholds.minNetworkBytesPerSec,
+          } : undefined,
+        },
       }));
 
       this.sendSuccessResponse(res, response);
@@ -520,6 +541,16 @@ export class ApiServer {
         image: container.image,
         environment: container.environment,
         metadata: container.metadata,
+        cleanup_strategy: {
+          type: container.cleanupStrategy.type,
+          max_lifetime: container.cleanupStrategy.maxLifetime,
+          activity_timeout: container.cleanupStrategy.activityTimeout,
+          activity_thresholds: container.cleanupStrategy.activityThresholds ? {
+            min_cpu_percent: container.cleanupStrategy.activityThresholds.minCpuPercent,
+            min_memory_mb: container.cleanupStrategy.activityThresholds.minMemoryMB,
+            min_network_bytes_per_sec: container.cleanupStrategy.activityThresholds.minNetworkBytesPerSec,
+          } : undefined,
+        },
       };
 
       this.sendSuccessResponse(res, response);
@@ -628,6 +659,18 @@ export class ApiServer {
         if (!Number.isInteger(port) || port < 1 || port > 65535) {
           return "Ports must be valid port numbers (1-65535)";
         }
+      }
+    }
+
+    // Validate cleanup strategy if provided
+    if (body.cleanupStrategy !== undefined) {
+      if (typeof body.cleanupStrategy !== "object" || Array.isArray(body.cleanupStrategy)) {
+        return "cleanupStrategy must be an object if provided";
+      }
+
+      const validation = validateCleanupStrategy(body.cleanupStrategy);
+      if (!validation.isValid) {
+        return `Invalid cleanup strategy: ${validation.errors.join(", ")}`;
       }
     }
 

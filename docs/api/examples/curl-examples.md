@@ -2,7 +2,7 @@
 title: "cURL API Examples"
 description: "Comprehensive cURL examples for all API endpoints"
 audience: ["developers", "api-consumers", "testers"]
-last_updated: "2025-01-23"
+last_updated: "2025-01-25"
 version: "1.0.0"
 related_docs:
   - "../endpoints.md"
@@ -132,7 +132,64 @@ curl -X POST "${BASE_URL}/containers" \
       "NGINX_HOST": "localhost",
       "NGINX_PORT": "80"
     },
-    "ports": [80, 443]
+    "ports": [80, 443],
+    "cleanupStrategy": {
+      "type": "hybrid",
+      "maxLifetime": 3600,
+      "activityTimeout": 300,
+      "activityThresholds": {
+        "minCpuPercent": 5.0,
+        "minMemoryMB": 50,
+        "minNetworkBytesPerSec": 1024
+      }
+    }
+  }'
+```
+
+#### Create Container with Activity-Based Cleanup
+
+```bash
+curl -X POST "${BASE_URL}/containers" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image": "nginx:alpine",
+    "cleanupStrategy": {
+      "type": "activity",
+      "activityTimeout": 600
+    }
+  }'
+```
+
+#### Create Container with Lifetime-Based Cleanup
+
+```bash
+curl -X POST "${BASE_URL}/containers" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image": "nginx:alpine",
+    "cleanupStrategy": {
+      "type": "lifetime",
+      "maxLifetime": 3600
+    }
+  }'
+```
+
+#### Create Container with Custom Activity Thresholds
+
+```bash
+curl -X POST "${BASE_URL}/containers" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image": "nginx:alpine",
+    "cleanupStrategy": {
+      "type": "activity",
+      "activityTimeout": 300,
+      "activityThresholds": {
+        "minCpuPercent": 10.0,
+        "minMemoryMB": 100,
+        "minNetworkBytesPerSec": 2048
+      }
+    }
   }'
 ```
 
@@ -145,6 +202,11 @@ CONTAINER_RESPONSE=$(curl -s -X POST "${BASE_URL}/containers" \
     "image": "nginx:alpine",
     "environment": {
       "ENV_VAR": "test_value"
+    },
+    "cleanupStrategy": {
+      "type": "hybrid",
+      "maxLifetime": 1800,
+      "activityTimeout": 300
     }
   }')
 
@@ -153,6 +215,10 @@ echo "$CONTAINER_RESPONSE" | jq '.'
 # Extract container ID for later use
 CONTAINER_ID=$(echo "$CONTAINER_RESPONSE" | jq -r '.data.id')
 echo "Created container: $CONTAINER_ID"
+
+# Extract cleanup strategy information
+echo "Cleanup strategy:"
+echo "$CONTAINER_RESPONSE" | jq '.data.cleanup_strategy'
 ```
 
 **Expected Response:**
@@ -172,6 +238,12 @@ echo "Created container: $CONTAINER_ID"
     "image": "nginx:alpine",
     "environment": {
       "ENV_VAR": "test_value"
+    },
+    "cleanup_strategy": {
+      "type": "hybrid",
+      "max_lifetime": 1800,
+      "activity_timeout": 300,
+      "activity_thresholds": null
     }
   }
 }
@@ -384,6 +456,87 @@ curl -X GET "${BASE_URL}/invalid-endpoint"
   "error": {
     "code": "ENDPOINT_NOT_FOUND",
     "message": "Endpoint GET /invalid-endpoint not found",
+    "timestamp": "2025-01-23T10:40:00.000Z"
+  }
+}
+```
+
+### Invalid Cleanup Strategy Type
+
+```bash
+curl -X POST "${BASE_URL}/containers" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image": "nginx:alpine",
+    "cleanupStrategy": {
+      "type": "invalid_type",
+      "activityTimeout": 300
+    }
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid cleanup strategy: type must be one of: activity, lifetime, hybrid",
+    "timestamp": "2025-01-23T10:40:00.000Z"
+  }
+}
+```
+
+### Invalid Activity Timeout
+
+```bash
+curl -X POST "${BASE_URL}/containers" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image": "nginx:alpine",
+    "cleanupStrategy": {
+      "type": "activity",
+      "activityTimeout": -300
+    }
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid cleanup strategy: activityTimeout must be a positive number",
+    "timestamp": "2025-01-23T10:40:00.000Z"
+  }
+}
+```
+
+### Invalid Activity Thresholds
+
+```bash
+curl -X POST "${BASE_URL}/containers" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image": "nginx:alpine",
+    "cleanupStrategy": {
+      "type": "activity",
+      "activityTimeout": 300,
+      "activityThresholds": {
+        "minCpuPercent": 150
+      }
+    }
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid cleanup strategy: activityThresholds.minCpuPercent must be a number between 0 and 100",
     "timestamp": "2025-01-23T10:40:00.000Z"
   }
 }
