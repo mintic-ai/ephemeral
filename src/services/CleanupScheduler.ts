@@ -57,19 +57,17 @@ export class CleanupScheduler {
     if (this.isRunning) {
       throw new CleanupSchedulerError('Cleanup scheduler is already running', 'ALREADY_RUNNING');
     }
-
-    // Create cron expression for the configured interval (in seconds)
     const cronExpression = this.createCronExpression(this.config.cleanup.interval);
-    
     this.cronJob = cron.schedule(cronExpression, async () => {
       await this.performCleanup();
     }, {
       scheduled: false // Don't start immediately
     });
 
-    this.cronJob.start();
+    if (this.cronJob) {
+      this.cronJob.start();
+    }
     this.isRunning = true;
-    
     this.logger.logSystemEvent('cleanup_scheduler_started', 'CleanupScheduler', {
       interval: this.config.cleanup.interval,
       cronExpression
@@ -149,8 +147,8 @@ export class CleanupScheduler {
       // Check each container for inactivity
       for (const container of containers) {
         const lastActivity = this.activityMonitor.getLastActivity(container.id);
-        
-        if (this.shouldRemoveContainer(container.id, lastActivity, currentTime)) {
+        const shouldRemove = await this.shouldRemoveContainer(container.id, lastActivity, currentTime);
+        if (shouldRemove) {
           const result = await this.attemptContainerRemoval(container.id);
           results.push(result);
         }
@@ -201,9 +199,9 @@ export class CleanupScheduler {
   /**
    * Check if a container should be removed based on its cleanup strategy
    */
-  private shouldRemoveContainer(containerId: string, lastActivity: Date | null, currentTime: Date): boolean {
+  async shouldRemoveContainer(containerId: string, lastActivity: Date | null, currentTime: Date): Promise<boolean> {
     // Get container to access its cleanup strategy
-    const container = this.containerManager.getContainer(containerId);
+    const container = await this.containerManager.getContainer(containerId);
     if (!container) {
       this.logger.warn('CleanupScheduler', `Container ${containerId} not found, marking for removal`, {
         containerId
@@ -218,30 +216,23 @@ export class CleanupScheduler {
     const lifetimePeriod = currentTime.getTime() - createdAt.getTime();
     const inactivityPeriod = lastActivity ? currentTime.getTime() - lastActivity.getTime() : lifetimePeriod;
 
-    // Check cleanup conditions based on strategy type
     switch (strategy.type) {
       case 'activity':
         return this.shouldRemoveByActivity(containerId, strategy, inactivityPeriod, lastActivity);
-      
       case 'lifetime':
         return this.shouldRemoveByLifetime(containerId, strategy, lifetimePeriod);
-      
       case 'hybrid':
         return this.shouldRemoveByHybrid(containerId, strategy, inactivityPeriod, lifetimePeriod, lastActivity);
-      
       default:
         this.logger.warn('CleanupScheduler', `Unknown cleanup strategy type for container ${containerId}: ${strategy.type}`, {
           containerId,
           strategyType: strategy.type
         });
-        // Fall back to default activity-based cleanup
+        // Default to activity-based removal if unknown
         return this.shouldRemoveByActivity(containerId, strategy, inactivityPeriod, lastActivity);
     }
   }
 
-  /**
-   * Check if container should be removed based on activity timeout
-   */
   private shouldRemoveByActivity(containerId: string, strategy: any, inactivityPeriod: number, lastActivity: Date | null): boolean {
     if (!lastActivity) {
       this.logger.warn('CleanupScheduler', `No activity recorded for container ${containerId}, marking for removal`, {

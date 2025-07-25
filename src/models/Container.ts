@@ -6,9 +6,9 @@ export interface ActivityThresholds {
 
 export interface CleanupStrategy {
   type: 'activity' | 'lifetime' | 'hybrid';
-  maxLifetime?: number; // seconds
-  activityTimeout?: number; // seconds
-  activityThresholds?: ActivityThresholds;
+  maxLifetime: number | null; // seconds
+  activityTimeout: number | null; // seconds
+  activityThresholds: ActivityThresholds | null;
 }
 
 export interface Container {
@@ -134,7 +134,9 @@ export function validateCleanupStrategy(strategy: CleanupStrategy): { isValid: b
 export function createDefaultCleanupStrategy(): CleanupStrategy {
   return {
     type: 'activity',
-    activityTimeout: 300 // 5 minutes default
+    maxLifetime: null,
+    activityTimeout: 300,
+    activityThresholds: null
   };
 }
 
@@ -143,16 +145,15 @@ export function normalizeCleanupStrategy(strategy?: CleanupStrategy): CleanupStr
     return createDefaultCleanupStrategy();
   }
 
-  // Return a copy with defaults applied where needed
   const normalized: CleanupStrategy = {
     type: strategy.type,
-    maxLifetime: strategy.maxLifetime,
-    activityTimeout: strategy.activityTimeout,
-    activityThresholds: strategy.activityThresholds
+    maxLifetime: typeof strategy.maxLifetime === 'number' ? strategy.maxLifetime : null,
+    activityTimeout: typeof strategy.activityTimeout === 'number' ? strategy.activityTimeout : null,
+    activityThresholds: strategy.activityThresholds ?? null
   };
 
   // Apply defaults based on strategy type
-  if (normalized.type === 'activity' && normalized.activityTimeout === undefined) {
+  if (normalized.type === 'activity' && normalized.activityTimeout === null) {
     normalized.activityTimeout = 300; // 5 minutes default
   }
 
