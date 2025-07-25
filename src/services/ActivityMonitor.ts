@@ -1,7 +1,7 @@
 import Docker from 'dockerode';
-import { ActivityRecord, ActivityUpdate } from '../models/ActivityRecord.js';
-import { ErrorHandler } from '../utils/ErrorHandler.js';
-import { Logger } from '../utils/Logger.js';
+import { ActivityRecord, ActivityUpdate } from '../models/ActivityRecord';
+import { ErrorHandler } from '../utils/ErrorHandler';
+import { Logger } from '../utils/Logger';
 
 export class ActivityMonitor {
   private docker: Docker;

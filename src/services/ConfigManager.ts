@@ -1,4 +1,4 @@
-import { SystemConfig, DockerConfig, CleanupConfig, ApiConfig } from '../models/SystemConfig.js';
+import { SystemConfig, DockerConfig, CleanupConfig, ApiConfig } from '../models/SystemConfig';
 
 export class ConfigValidationError extends Error {
   constructor(message: string, public field: string) {

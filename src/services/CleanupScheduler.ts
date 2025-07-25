@@ -1,10 +1,10 @@
 import * as cron from 'node-cron';
-import { ContainerManager } from './ContainerManager.js';
-import { ActivityMonitor } from './ActivityMonitor.js';
-import { ConfigManager } from './ConfigManager.js';
-import { SystemConfig } from '../models/SystemConfig.js';
-import { Logger } from '../utils/Logger.js';
-import { ErrorHandler } from '../utils/ErrorHandler.js';
+import { ContainerManager } from './ContainerManager';
+import { ActivityMonitor } from './ActivityMonitor';
+import { ConfigManager } from './ConfigManager';
+import { SystemConfig } from '../models/SystemConfig';
+import { Logger } from '../utils/Logger';
+import { ErrorHandler } from '../utils/ErrorHandler';
 
 export interface CleanupResult {
   containerId: string;

@@ -1,10 +1,10 @@
 import express, { Express, Request, Response, NextFunction } from "express";
-import { ContainerManager } from "../services/ContainerManager.js";
-import { ActivityMonitor } from "../services/ActivityMonitor.js";
-import { ConfigManager } from "../services/ConfigManager.js";
-import { SystemConfig } from "../models/SystemConfig.js";
-import { Logger } from "../utils/Logger.js";
-import { ErrorHandler } from "../utils/ErrorHandler.js";
+import { ContainerManager } from "../services/ContainerManager";
+import { ActivityMonitor } from "../services/ActivityMonitor";
+import { ConfigManager } from "../services/ConfigManager";
+import { SystemConfig } from "../models/SystemConfig";
+import { Logger } from "../utils/Logger";
+import { ErrorHandler } from "../utils/ErrorHandler";
 import Docker from "dockerode";
 
 export interface ApiError {

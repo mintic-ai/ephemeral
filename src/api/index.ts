@@ -1,2 +1,2 @@
 // Export all API components
-export * from './server.js';
+export * from './server';

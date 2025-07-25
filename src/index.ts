@@ -4,13 +4,13 @@ export * from './services';
 export * from './api';
 
 import Docker from 'dockerode';
-import { ConfigManager } from './services/ConfigManager.js';
-import { ContainerManager } from './services/ContainerManager.js';
-import { ActivityMonitor } from './services/ActivityMonitor.js';
-import { CleanupScheduler } from './services/CleanupScheduler.js';
-import { ApiServer } from './api/server.js';
-import { Logger } from './utils/Logger.js';
-import { ErrorHandler } from './utils/ErrorHandler.js';
+import { ConfigManager } from './services/ConfigManager';
+import { ContainerManager } from './services/ContainerManager';
+import { ActivityMonitor } from './services/ActivityMonitor';
+import { CleanupScheduler } from './services/CleanupScheduler';
+import { ApiServer } from './api/server';
+import { Logger } from './utils/Logger';
+import { ErrorHandler } from './utils/ErrorHandler';
 
 class EphemeralApp {
   private configManager!: ConfigManager;
@@ -293,8 +293,8 @@ function setupShutdownHandlers(app: EphemeralApp): void {
 // Export the application class and main function
 export { EphemeralApp, main };
 
-// Start the application if this file is run directly (Node.js CommonJS style check)
-if (process.argv[1] && process.argv[1].endsWith('index.js')) {
+// Start the application if this file is run directly (Node CommonJS style check)
+if (require.main === module) {
   main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);

@@ -1,9 +1,9 @@
 import Docker from 'dockerode';
-import { Container, ContainerCreateRequest } from '../models/Container.js';
-import { ConfigManager } from './ConfigManager.js';
-import { SystemConfig } from '../models/SystemConfig.js';
-import { Logger } from '../utils/Logger.js';
-import { ErrorHandler } from '../utils/ErrorHandler.js';
+import { Container, ContainerCreateRequest } from '../models/Container';
+import { ConfigManager } from './ConfigManager';
+import { SystemConfig } from '../models/SystemConfig';
+import { Logger } from '../utils/Logger';
+import { ErrorHandler } from '../utils/ErrorHandler';
 import { randomUUID } from 'crypto';
 
 export class ContainerManagerError extends Error {
