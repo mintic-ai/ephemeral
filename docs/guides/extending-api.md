@@ -808,13 +808,13 @@ describe('MyResource API', () => {
 // tests/integration/api/my-resource.integration.test.ts
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
-import { DockerOnDemandApp } from '../../../src/index.js';
+import { EphemeralApp } from '../../../src/index.js';
 
 describe('MyResource API Integration', () => {
-  let app: DockerOnDemandApp;
+  let app: EphemeralApp;
 
   beforeEach(async () => {
-    app = new DockerOnDemandApp();
+    app = new EphemeralApp();
     await app.initialize();
     await app.start();
   });

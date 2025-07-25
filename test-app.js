@@ -1,11 +1,11 @@
 // Simple test to verify the main application orchestration works
-const { DockerOnDemandApp } = require('./dist/index.js');
+const { EphemeralApp } = require('./dist/index.js');
 
 async function testApp() {
   console.log('Testing Ephemeral App orchestration...');
   
   try {
-    const app = new DockerOnDemandApp();
+    const app = new EphemeralApp();
     
     // Test initialization
     console.log('1. Testing initialization...');

@@ -550,8 +550,8 @@ To integrate your service with the main application, modify `src/index.ts`:
 // Add to imports
 import { MyService } from './services/MyService.js';
 
-// Add to DockerOnDemandApp class
-class DockerOnDemandApp {
+// Add to EphemeralApp class
+class EphemeralApp {
   // ... existing properties
   private myService!: MyService;
 
@@ -561,7 +561,7 @@ class DockerOnDemandApp {
 
       // Initialize your service after ConfigManager
       this.myService = new MyService(this.configManager);
-      this.logger.info('DockerOnDemandApp', 'MyService initialized');
+      this.logger.info('EphemeralApp', 'MyService initialized');
 
       // ... rest of initialization
     } catch (error) {
@@ -575,7 +575,7 @@ class DockerOnDemandApp {
     // Add cleanup for your service
     if (this.myService) {
       this.myService.cleanup();
-      this.logger.info('DockerOnDemandApp', 'MyService cleaned up');
+      this.logger.info('EphemeralApp', 'MyService cleaned up');
     }
 
     // ... rest of shutdown

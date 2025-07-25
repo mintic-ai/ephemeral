@@ -490,7 +490,7 @@ describe('Configuration Integration', () => {
     process.env.LOG_LEVEL = 'debug';
     // ... set all required env vars
 
-    const app = new DockerOnDemandApp();
+    const app = new EphemeralApp();
     await expect(app.initialize()).resolves.not.toThrow();
     await app.shutdown();
   });
@@ -498,7 +498,7 @@ describe('Configuration Integration', () => {
   it('should fail with invalid configuration', async () => {
     process.env.API_PORT = 'invalid';
     
-    const app = new DockerOnDemandApp();
+    const app = new EphemeralApp();
     await expect(app.initialize()).rejects.toThrow(ConfigValidationError);
   });
 });

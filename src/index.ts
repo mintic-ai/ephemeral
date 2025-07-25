@@ -12,7 +12,7 @@ import { ApiServer } from './api/server.js';
 import { Logger } from './utils/Logger.js';
 import { ErrorHandler } from './utils/ErrorHandler.js';
 
-class DockerOnDemandApp {
+class EphemeralApp {
   private configManager!: ConfigManager;
   private containerManager!: ContainerManager;
   private activityMonitor!: ActivityMonitor;
@@ -31,12 +31,12 @@ class DockerOnDemandApp {
    */
   async initialize(): Promise<void> {
     try {
-      this.logger.info('DockerOnDemandApp', 'Starting application initialization');
+      this.logger.info('EphemeralApp', 'Starting application initialization');
 
       // 1. Initialize configuration manager first
       this.configManager = ConfigManager.getInstance();
       const config = this.configManager.loadConfig();
-      this.logger.info('DockerOnDemandApp', 'Configuration loaded successfully', {
+      this.logger.info('EphemeralApp', 'Configuration loaded successfully', {
         dockerImage: config.docker.defaultImage,
         apiPort: config.api.port,
         cleanupInterval: config.cleanup.interval
@@ -52,11 +52,11 @@ class DockerOnDemandApp {
 
       // 3. Initialize container manager
       this.containerManager = new ContainerManager(this.configManager);
-      this.logger.info('DockerOnDemandApp', 'Container manager initialized');
+      this.logger.info('EphemeralApp', 'Container manager initialized');
 
       // 4. Initialize activity monitor
       this.activityMonitor = new ActivityMonitor(this.docker);
-      this.logger.info('DockerOnDemandApp', 'Activity monitor initialized');
+      this.logger.info('EphemeralApp', 'Activity monitor initialized');
 
       // 5. Initialize cleanup scheduler
       this.cleanupScheduler = new CleanupScheduler(
@@ -64,7 +64,7 @@ class DockerOnDemandApp {
         this.activityMonitor,
         this.configManager
       );
-      this.logger.info('DockerOnDemandApp', 'Cleanup scheduler initialized');
+      this.logger.info('EphemeralApp', 'Cleanup scheduler initialized');
 
       // 6. Initialize API server
       this.apiServer = new ApiServer(
@@ -72,13 +72,13 @@ class DockerOnDemandApp {
         this.activityMonitor,
         this.configManager
       );
-      this.logger.info('DockerOnDemandApp', 'API server initialized');
+      this.logger.info('EphemeralApp', 'API server initialized');
 
-      this.logger.info('DockerOnDemandApp', 'All services initialized successfully');
+      this.logger.info('EphemeralApp', 'All services initialized successfully');
 
     } catch (error) {
       const appError = error instanceof Error ? error : new Error(String(error));
-      this.logger.error('DockerOnDemandApp', 'Failed to initialize application', appError);
+      this.logger.error('EphemeralApp', 'Failed to initialize application', appError);
       throw new Error(`Application initialization failed: ${appError.message}`);
     }
   }
@@ -88,21 +88,21 @@ class DockerOnDemandApp {
    */
   async start(): Promise<void> {
     try {
-      this.logger.info('DockerOnDemandApp', 'Starting all services');
+      this.logger.info('EphemeralApp', 'Starting all services');
 
       // Start cleanup scheduler
       this.cleanupScheduler.start();
-      this.logger.info('DockerOnDemandApp', 'Cleanup scheduler started');
+      this.logger.info('EphemeralApp', 'Cleanup scheduler started');
 
       // Start API server (this should be last as it indicates the system is ready)
       await this.apiServer.start();
-      this.logger.info('DockerOnDemandApp', 'API server started');
+      this.logger.info('EphemeralApp', 'API server started');
 
-      this.logger.info('DockerOnDemandApp', 'Ephemeral system is now running');
+      this.logger.info('EphemeralApp', 'Ephemeral system is now running');
 
     } catch (error) {
       const appError = error instanceof Error ? error : new Error(String(error));
-      this.logger.error('DockerOnDemandApp', 'Failed to start application', appError);
+      this.logger.error('EphemeralApp', 'Failed to start application', appError);
       
       // Attempt cleanup if startup fails
       await this.shutdown();
@@ -115,24 +115,24 @@ class DockerOnDemandApp {
    */
   async shutdown(): Promise<void> {
     if (this.isShuttingDown) {
-      this.logger.warn('DockerOnDemandApp', 'Shutdown already in progress');
+      this.logger.warn('EphemeralApp', 'Shutdown already in progress');
       return;
     }
 
     this.isShuttingDown = true;
-    this.logger.info('DockerOnDemandApp', 'Starting graceful shutdown');
+    this.logger.info('EphemeralApp', 'Starting graceful shutdown');
 
     try {
       // Stop cleanup scheduler first to prevent new cleanup operations
       if (this.cleanupScheduler) {
         this.cleanupScheduler.stop();
-        this.logger.info('DockerOnDemandApp', 'Cleanup scheduler stopped');
+        this.logger.info('EphemeralApp', 'Cleanup scheduler stopped');
       }
 
       // Stop activity monitoring
       if (this.activityMonitor) {
         this.activityMonitor.cleanup();
-        this.logger.info('DockerOnDemandApp', 'Activity monitor stopped');
+        this.logger.info('EphemeralApp', 'Activity monitor stopped');
       }
 
       // Clean up any remaining containers (optional - could be configurable)
@@ -140,11 +140,11 @@ class DockerOnDemandApp {
         await this.cleanupRemainingContainers();
       }
 
-      this.logger.info('DockerOnDemandApp', 'Graceful shutdown completed');
+      this.logger.info('EphemeralApp', 'Graceful shutdown completed');
 
     } catch (error) {
       const shutdownError = error instanceof Error ? error : new Error(String(error));
-      this.logger.error('DockerOnDemandApp', 'Error during shutdown', shutdownError);
+      this.logger.error('EphemeralApp', 'Error during shutdown', shutdownError);
       throw shutdownError;
     }
   }
@@ -158,10 +158,10 @@ class DockerOnDemandApp {
         () => this.docker.ping(),
         'verify Docker connection'
       );
-      this.logger.info('DockerOnDemandApp', 'Docker connection verified');
+      this.logger.info('EphemeralApp', 'Docker connection verified');
     } catch (error) {
       const dockerError = error instanceof Error ? error : new Error(String(error));
-      this.logger.error('DockerOnDemandApp', 'Failed to connect to Docker daemon', dockerError);
+      this.logger.error('EphemeralApp', 'Failed to connect to Docker daemon', dockerError);
       throw new Error(`Docker connection failed: ${dockerError.message}`);
     }
   }
@@ -174,15 +174,15 @@ class DockerOnDemandApp {
       const containers = await this.containerManager.listContainers();
       
       if (containers.length > 0) {
-        this.logger.info('DockerOnDemandApp', `Cleaning up ${containers.length} remaining containers during shutdown`);
+        this.logger.info('EphemeralApp', `Cleaning up ${containers.length} remaining containers during shutdown`);
         
         for (const container of containers) {
           try {
             await this.containerManager.removeContainer(container.id);
-            this.logger.info('DockerOnDemandApp', `Removed container ${container.id} during shutdown`);
+            this.logger.info('EphemeralApp', `Removed container ${container.id} during shutdown`);
           } catch (error) {
             const containerError = error instanceof Error ? error : new Error(String(error));
-            this.logger.warn('DockerOnDemandApp', `Failed to remove container ${container.id} during shutdown`, {
+            this.logger.warn('EphemeralApp', `Failed to remove container ${container.id} during shutdown`, {
               containerId: container.id,
               error: containerError.message
             });
@@ -191,7 +191,7 @@ class DockerOnDemandApp {
       }
     } catch (error) {
       const cleanupError = error instanceof Error ? error : new Error(String(error));
-      this.logger.warn('DockerOnDemandApp', 'Error during container cleanup', {
+      this.logger.warn('EphemeralApp', 'Error during container cleanup', {
         error: cleanupError.message
       });
     }
@@ -216,7 +216,7 @@ class DockerOnDemandApp {
 }
 
 // Global application instance
-let appInstance: DockerOnDemandApp | null = null;
+let appInstance: EphemeralApp | null = null;
 
 /**
  * Main application entry point
@@ -224,7 +224,7 @@ let appInstance: DockerOnDemandApp | null = null;
 async function main(): Promise<void> {
   try {
     // Create application instance
-    appInstance = new DockerOnDemandApp();
+    appInstance = new EphemeralApp();
 
     // Set up graceful shutdown handlers
     setupShutdownHandlers(appInstance);
@@ -243,7 +243,7 @@ async function main(): Promise<void> {
 /**
  * Set up graceful shutdown signal handlers
  */
-function setupShutdownHandlers(app: DockerOnDemandApp): void {
+function setupShutdownHandlers(app: EphemeralApp): void {
   const shutdownHandler = async (signal: string) => {
     console.log(`\nReceived ${signal}, starting graceful shutdown...`);
     
@@ -291,7 +291,7 @@ function setupShutdownHandlers(app: DockerOnDemandApp): void {
 }
 
 // Export the application class and main function
-export { DockerOnDemandApp, main };
+export { EphemeralApp, main };
 
 // Start the application if this file is run directly (Node.js CommonJS style check)
 if (process.argv[1] && process.argv[1].endsWith('index.js')) {
